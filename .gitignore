@@ -1,0 +1,36 @@
+.DS_Store
+*~
+*.swp
+.*
+~*
+!.gitignore
+!.gitkeep
+
+# Object files
+*.o
+
+# Problem files
+*.txt
+!NL_Q00.txt
+!issue*
+!README.txt
+*.original
+*.zip
+
+# Executables
+*.exe
+*.stackdump
+*.out
+solver
+viewer
+sim
+
+# Python files
+*.pyc
+*.pkl
+
+# Log files
+*.log
+
+# Problem generator
+create_q/
