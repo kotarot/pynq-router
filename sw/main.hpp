@@ -39,16 +39,23 @@ using namespace std;
 // 各種設定値
 #define NOT_USE -1
 
-#define MAX_BOXES 72     // X, Y の最大値 (7ビットで収まる)
+#define MAX_BOXES 72        // X, Y の最大値 (7ビットで収まる)
 #define BITWIDTH_X 7
 #define BITWIDTH_Y 7
-#define MAX_LAYER 8      // Z の最大値 (3ビットで収まる)
+#define BITMASK_X  127
+#define BITMASK_Y  127
+#define MAX_LAYER 8         // Z の最大値 (3ビットで収まる)
 #define BITWIDTH_Z 3
-#define MAX_CELLS 131072 // セルの総数 =128*128*8 (17ビットで収まる)
-#define MAX_LINES 128    // ライン数の最大値 (7ビットで収まる)
-#define MAX_PATH 256     // 1つのラインが対応するセル数の最大値 (8ビットで収まる)
+#define BITMASK_Z  7
+
+#define MAX_CELLS 131072    // セルの総数 =128*128*8 (17ビットで収まる)
+#define MAX_LINES 128       // ライン数の最大値 (7ビットで収まる)
+#define MAX_PATH 256        // 1つのラインが対応するセル数の最大値 (8ビットで収まる)
 
 #define BOARDSTR_SIZE 32768 // ボードストリングの最大文字数 (15ビットで収まる : 値はとりあえず)
+
+#define MAX_PQ 512          // 探索時のプライオリティ・キューの最大サイズ
+#define MAX_WEIGHT 255      // 重みの最大値 (16ビットで収まる)
 
 
 #ifdef USE_MT
@@ -64,9 +71,12 @@ ap_uint<32> lfsr_random_uint32(ap_uint<32> a, ap_uint<32> b);
 bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status);
 //void initialize(char boardstr[BOARDSTR_SIZE], Board *board);
 //bool isFinished(Board *board);
-//void generateSolution(char boardstr[BOARDSTR_SIZE], Board *board);
+//void solution(char boardstr[BOARDSTR_SIZE], ap_uint<8> line_num, ap_uint<17> starts[MAX_LINE]);
 
-void search(ap_uint<7> size_x, ap_uint<7> size_y, ap_uint<3> size_z, ap_uint<17> start, ap_uint<17> goal, ap_uint<8> w[]);
+void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x, ap_uint<7> size_y, ap_uint<3> size_z,
+    ap_uint<17> start, ap_uint<17> goal, ap_uint<8> w[MAX_CELLS]);
 
+void pq_push(int priority, int data, int *pq_len, int *pq_size, int pq_nodes_priority[MAX_PQ], int pq_nodes_data[MAX_PQ]);
+void pq_pop(int *ret_priority, int *ret_data, int *pq_len, int *pq_size, int pq_nodes_priority[MAX_PQ], int pq_nodes_data[MAX_PQ]);
 
 #endif /* __MAIN_HPP__ */
