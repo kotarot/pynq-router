@@ -62,7 +62,7 @@ void init_genrand(unsigned long s)
 #pragma HLS INLINE
     mt[0]= s & 0xffffffffUL;
     for (mti=1; mti<N; mti++) {
-//#pragma HLS PIPELINE // ON‚É‚·‚é‚ÆƒNƒŠƒeƒBƒJƒ‹ƒpƒX‚ªƒNƒƒbƒNŽüŠú‚ðƒI[ƒo[‚·‚é
+//#pragma HLS PIPELINE // ONã«ã™ã‚‹ã¨ã‚¯ãƒªãƒ†ã‚£ã‚«ãƒ«ãƒ‘ã‚¹ãŒã‚¯ãƒ­ãƒƒã‚¯å‘¨æœŸã‚’ã‚ªãƒ¼ãƒãƒ¼ã™ã‚‹
 	        mt[mti] = 
 	    (1812433253UL * (mt[mti-1] ^ (mt[mti-1] >> 30)) + mti); 
         /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */

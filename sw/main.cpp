@@ -7,7 +7,7 @@
 #ifndef SOFTWARE
 #include <stdio.h>
 #include <string.h>
-#include <ap_int.h>
+//#include <ap_int.h>
 #endif
 
 #ifdef SOFTWARE
@@ -17,509 +17,170 @@
 #endif
 
 #include "./main.hpp"
-#include "./route.hpp"
-#include "./route_final.hpp"
+//#include "./route.hpp"
 
 
 // ================================ //
-// ãƒ¡ãƒ«ã‚»ãƒ³ãƒŒãƒ»ãƒ„ã‚¤ã‚¹ã‚¿
+// ƒƒ‹ƒZƒ“ƒkEƒcƒCƒXƒ^
 // ================================ //
 #include "mt19937ar.hpp"
 
 void mt_init_genrand(unsigned long s) {
 ////#pragma HLS INLINE
-	init_genrand(s);
+    init_genrand(s);
 }
 
-// Aã‹ã‚‰Bã®ç¯„å›²ã®æ•´æ•°ã®ä¹±æ•°ãŒæ¬²ã—ã„ã¨ã
-// å‚è€ƒ http://www.sat.t.u-tokyo.ac.jp/~omi/random_variables_generation.html
+// A‚©‚çB‚Ì”ÍˆÍ‚Ì®”‚Ì—”‚ª—~‚µ‚¢‚Æ‚«
+// Ql http://www.sat.t.u-tokyo.ac.jp/~omi/random_variables_generation.html
 unsigned long mt_genrand_int32(int a, int b) {
 ////#pragma HLS INLINE
-	return genrand_int32() % (b - a + 1) + a;
+    return genrand_int32() % (b - a + 1) + a;
+}
+
+// ================================ //
+// ’Tõ
+// ================================ //
+
+void search(ap_uint<7> size_x, ap_uint<7> size_y, ap_uint<3> size_z,
+    ap_uint<17> start, ap_uint<17> goal, ap_uint<8> *w) {
+
+    cout << size_x << " " << size_y << " " << size_z << endl;
+    cout << start << " -> " << goal << endl;
+
 }
 
 
-bool nlsolver(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
+// ================================ //
+// ƒƒCƒ“ƒ‚ƒWƒ…[ƒ‹
+// ================================ //
+
+bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
 #pragma HLS INTERFACE s_axilite port=boardstr bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=status bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=return bundle=AXI4LS
 
-	*status = -127;
+    *status = -127;
 
-	//ap_int<16> outer_loops = O_LOOP;  // å¤–ãƒ«ãƒ¼ãƒ—å›æ•°
+    // ƒ{[ƒh‚ÉŠÖ‚·‚é•Ï”
+    ap_uint<7> size_x; // ƒ{[ƒh‚Ì X ƒTƒCƒY
+    ap_uint<7> size_y; // ƒ{[ƒh‚Ì Y ƒTƒCƒY
+    ap_uint<3> size_z; // ƒ{[ƒh‚Ì Z ƒTƒCƒY
 
-	//int line_to_viaid[100];			// Lineã¨å¯¾å¿œã™ã‚‹Viaã®å†…éƒ¨IDå¯¾å¿œ
-	//int line_to_via_priority[100];	// Lineã«å¯¾å¿œã™ã‚‹Viaã®å„ªå…ˆåº¦(*æ•°å­—ãŒé«˜ã„ã»ã©é‡è¦ï¼)
-	//int via_priority;				// æ¡ç”¨ã™ã‚‹Viaã®å„ªå…ˆåº¦
+    ap_uint<8> line_size = 0; // ƒ‰ƒCƒ“‚Ì‘”
 
-	ap_int<16> penalty_T; // penalty of "touch"
-	ap_int<16> penalty_C; // penalty of "cross"
-	ap_int<16> penalty_V; // penalty of "via duplication"
+    ap_uint<17> starts[MAX_LINES]; // ƒ‰ƒCƒ“‚ÌƒXƒ^[ƒgƒŠƒXƒg
+    ap_uint<17> goals[MAX_LINES];  // ƒ‰ƒCƒ“‚ÌƒS[ƒ‹ƒŠƒXƒg
 
-	Board boardobj;
-	initialize(boardstr, &boardobj); // å•é¡Œç›¤ã®ç”Ÿæˆ
-	Board *board = &boardobj;
-
-//if( print_option ) { printBoard(); }
-
-	// ä¹±æ•°ã®åˆæœŸåŒ–
-	mt_init_genrand(12345); //mt_init_genrand((unsigned long)time(NULL));
-	// ãƒšãƒŠãƒ«ãƒ†ã‚£ã®åˆæœŸåŒ–
-	penalty_T = 0;
-	penalty_C = 0;
-	penalty_V = 0;
-
-	ap_int<8> output;
-
-	// åˆæœŸãƒ«ãƒ¼ãƒ†ã‚£ãƒ³ã‚°
-	for (ap_int<8> i = 1; i <= board->getLineNum(); i++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=90 avg=50
-
-		// æ•°å­—ãŒéš£æ¥ã™ã‚‹å ´åˆã‚¹ã‚­ãƒƒãƒ—
-		if(board->line(i)->getHasLine() == false) continue;
-
-		if( !routing(i, penalty_T, penalty_C, penalty_V, board, &output) ){
-			//cerr << "Cannot solve!! (error: 1)" << endl;
-			//exit(1);
-			*status = 1; return false; 
-		}
-	}
-	for (ap_int<8> i = 1; i<= board->getLineNum(); i++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=90 avg=50
-
-		// æ•°å­—ãŒéš£æ¥ã™ã‚‹å ´åˆã‚¹ã‚­ãƒƒãƒ—
-		if(board->line(i)->getHasLine() == false) continue;
-
-		recordLine(i, board);
-	}
-
-	//via_priority = 0;
-
-	// æ¢ç´¢ã‚¹ã‚¿ãƒ¼ãƒˆ!!
-	// å¤–ãƒ«ãƒ¼ãƒ—
-	for (ap_uint<10> m = 2; m <= O_LOOP + 1; m++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=1000 avg=100
-
-		// è§£å°å‡ºãƒ•ãƒ©ã‚°
-		bool complete = false;
-
-//		if (m / 10 > via_priority){
-//			via_priority++;
-//if( print_option ) cout << "Via priority is " << via_priority << endl;
-//		}
-
-		// å†…ãƒ«ãƒ¼ãƒ—
-		for (ap_uint<10> n = 1; n <= I_LOOP; n++) { // å†…ãƒ«ãƒ¼ãƒ—
-#pragma HLS LOOP_TRIPCOUNT min=10 max=1000 avg=100
-
-			//cout << m-1 << ":" << n << endl;
-
-			// å•é¡Œä¸­ã§æ•°å­—ãŒéš£æ¥ã—ã¦ã„ãªã„ãƒ©ã‚¤ãƒ³ã‚’é¸æŠ
-			ap_int<8> id;
-			do {
-#pragma HLS LOOP_TRIPCOUNT min=1 max=10 avg=2
-				id = mt_genrand_int32(1, board->getLineNum());
-			} while (board->line(id)->getHasLine() == false);
-
-			// çµŒè·¯ã®å‰Šé™¤
-			deleteLine(id, board);
-
-			// ãƒšãƒŠãƒ«ãƒ†ã‚£ã®è¨­å®š
-			penalty_T = NT * (mt_genrand_int32(0, m - 1)); //penalty_T = (int)(NT * (mt_genrand_int32(0, m - 1)));
-			penalty_C = NC * (mt_genrand_int32(0, m - 1)); //penalty_C = (int)(NC * (mt_genrand_int32(0, m - 1)));
-			penalty_V = NV * (mt_genrand_int32(0, m - 1)); //penalty_V = (int)(NV * (mt_genrand_int32(0, m - 1)));
-
-			// ãƒ“ã‚¢æŒ‡å®š
-			// int via_idx = 1; // ãƒ“ã‚¢ç•ªå·
-			// board->line(id)->setSpecifiedVia(via_idx);
-			// ãƒ“ã‚¢æŒ‡å®šè§£é™¤
-			// board->line(id)->setSpecifiedVia(NOT_USE);
-
-			// ViaæŒ‡å®š
-			//if(line_to_viaid[id] != 0){
-			//	if(line_to_via_priority[id] >= via_priority)
-			//		board->line(id)->setSpecifiedVia(line_to_viaid[id]);
-			//	else
-			//		board->line(id)->setSpecifiedVia(NOT_USE);
-			//}
-
-			// çµŒè·¯ã®æ¢ç´¢
-			if ( !routing(id, penalty_T, penalty_C, penalty_V, board, &output) ) {
-				//cerr << "Cannot solve!! (error: 2)" << endl; // å¤±æ•—ã—ãŸã‚‰ãƒ—ãƒ­ã‚°ãƒ©ãƒ çµ‚äº†
-				//exit(2);
-				*status = 2; return false;
-			}
-			// çµŒè·¯ã®è¨˜éŒ²
-			recordLine(id, board);
-
-			// çµ‚äº†åˆ¤å®šï¼ˆè§£å°å‡ºã§ããŸå ´åˆï¼Œæ­£è§£ã‚’å‡ºåŠ›ï¼‰
-			if(isFinished(board)){
-
-				// æœ€çµ‚ãƒ«ãƒ¼ãƒ†ã‚£ãƒ³ã‚°
-				for (ap_int<8> i = 1; i <= board->getLineNum(); i++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=90 avg=50
-
-					// æ•°å­—ãŒéš£æ¥ã™ã‚‹å ´åˆã‚¹ã‚­ãƒƒãƒ—
-					if(board->line(i)->getHasLine() == false) continue;
-		
-					// çµŒè·¯ã®å‰Šé™¤
-					deleteLine(i, board);
-
-					if( !final_routing(i, board, &output) ){
-						//cerr << "Cannot solve!! (error: 3)" << endl;
-						//exit(3);
-						*status = 3; return false;
-					}
-
-					// çµŒè·¯ã®è¨˜éŒ²
-					recordLine(i, board);
-				}
-
-				//finish_time = clock();
-
-//if( print_option ) { printSolution(); }
-				generateSolution(boardstr, board);
-
-#if 0
-				if (out_filename != NULL) {
-					printSolutionToFile(out_filename);
-					cout << "--> Saved to " << out_filename << endl << endl;
-				}
-
-				cout << "SUMMARY" << endl;
-				cout << "-------" << endl;
-				cout << " - filename:   " << in_filename << endl;
-				cout << " - size:       " << board->getSizeX() << " x " << board->getSizeY() << " x " << board->getSizeZ() << endl;
-				cout << " - iterations: " << (m - 1) << endl;
-				cout << " - CPU time:   "
-				     << ((double)(finish_time - start_time) / (double)CLOCKS_PER_SEC)
-				     << " sec" << endl;
-#endif
-
-				complete = true;
-				break;
-			}
-		}
-		if(complete) break; // æ­£è§£å‡ºåŠ›å¾Œã¯å¤–ãƒ«ãƒ¼ãƒ—ã‚‚è„±å‡º
-	}
-	
-	
-	// è§£å°å‡ºã§ããªã‹ã£ãŸå ´åˆ
-	if(!isFinished(board)){
-		//finish_time = clock();
-		
-// ç¾çŠ¶ã®çµæœã‚’å‡ºåŠ›
-//if( print_option ) {
-//	for(int i=1;i<=board->getLineNum();i++){
-//		printLine(i);
-//	}
-//	cout << endl;
-//}
-
-#if 0
-		cout << "SUMMARY" << endl;
-		cout << "-------" << endl;
-		cout << " - filename:   " << in_filename << endl;
-		cout << " - size:       " << board->getSizeX() << " x " << board->getSizeY() << " x " << board->getSizeZ() << endl;
-		cout << " - iterations: " << outer_loops << endl;
-		cout << " - CPU time:   "
-		     << ((double)(finish_time - start_time) / (double)CLOCKS_PER_SEC)
-		     << " sec" << endl;
-#endif
-
-		//cerr << "Cannot solve!! (error: 4)" << endl;
-		//exit(4);
-		*status = 4; return false;
-	}
-
-	//delete board;
-
-	*status = 0;
-	return true;
-}
-
-
-/**
- * å•é¡Œç›¤ã®åˆæœŸåŒ– (HLS ver.)
- * @args: boardstr, board
- */
-void initialize(char boardstr[BOARDSTR_SIZE], Board *board){
-
-	// line_to_viaã®åˆæœŸåŒ–
-//	for (ap_int<8> i = 0; i < 100; i++) {
-//#pragma HLS PIPELINE
-//		line_to_viaid[i] = 0;
-//	}
-
-	ap_int<7> size_x, size_y; ap_int<5> size_z;
-	ap_int<8> line_num = 0;
-	ap_int<8> via_num = 0;
-	ap_int<7> lx_0[MAX_LINES]; ap_int<7> lx_1[MAX_LINES];
-	ap_int<7> ly_0[MAX_LINES]; ap_int<7> ly_1[MAX_LINES];
-	ap_int<5> lz_0[MAX_LINES]; ap_int<5> lz_1[MAX_LINES];
-	ap_int<7> vx_0[MAX_VIAS]; ap_int<7> vx_1[MAX_VIAS];
-	ap_int<7> vy_0[MAX_VIAS]; ap_int<7> vy_1[MAX_VIAS];
-	ap_int<5> vz_0[MAX_VIAS]; ap_int<5> vz_1[MAX_VIAS];
-	bool adjacents[MAX_LINES]; // åˆæœŸçŠ¶æ…‹ã§æ•°å­—ãŒéš£æ¥ã—ã¦ã„ã‚‹
+    ap_uint<8> weights[MAX_CELLS];          // ƒZƒ‹‚Ìd‚İ
+    ap_uint<8> paths_size[MAX_LINES];       // ƒ‰ƒCƒ“‚ª‘Î‰‚·‚éƒZƒ‹ID‚ÌƒTƒCƒY
+    ap_uint<17> paths[MAX_LINES][MAX_PATH]; // ƒ‰ƒCƒ“‚ª‘Î‰‚·‚éƒZƒ‹ID‚ÌW‡ (ƒXƒ^[ƒg‚ÆƒS[ƒ‹‚Íœ‚­)
+    bool adjacents[MAX_LINES];              // ƒXƒ^[ƒg‚ÆƒS[ƒ‹‚ª—×Ú‚µ‚Ä‚¢‚éƒ‰ƒCƒ“
 //#pragma HLS ARRAY_PARTITION variable=adjacents complete dim=0
-//#pragma HLS ARRAY_PARTITION variable=adjacents cyclic factor=10 dim=0
 
-	for (ap_int<8> i = 0; i < MAX_LINES; i++) {
+    // ================================
+    // ‰Šú‰» BEGIN
+    // ================================
+
+    // ƒ‹[ƒvƒJƒEƒ“ƒ^‚Í1ƒrƒbƒg—]•ª‚É—pˆÓ‚µ‚È‚¢‚ÆI—¹”»’è‚Å‚«‚È‚¢
+    for (ap_uint<8> i = 0; i < (ap_uint<8>)(MAX_LINES); i++) {
 //#pragma HLS PIPELINE
-		adjacents[i] = false;
-	}
+        adjacents[i] = false;
+    }
 
-	// unsigned 14bit ã¯ 12800 ã«åã¾ã‚‹ãŸã‚
-	for (ap_uint<14> idx = 0; ; ) {
-#pragma HLS LOOP_TRIPCOUNT min=1280 max=12800 avg=2000
+    // ƒ{[ƒhƒXƒgƒŠƒ“ƒO‚Ì‰ğß
+    // unsigned 15bit ‚Í 32768 ‚Éû‚Ü‚é‚½‚ß
+    for (ap_uint<15> idx = 0; ; ) {
+#pragma HLS LOOP_TRIPCOUNT min=100 max=32768 avg=1000
 
-		if (boardstr[idx] == 'X') {
-			size_x = (boardstr[idx+1] - '0') * 10 + (boardstr[idx+2] - '0');
-			//cout << size_x << endl;
-			idx = idx + 3;
-		}
-		else if (boardstr[idx] == 'Y') {
-			size_y = (boardstr[idx+1] - '0') * 10 + (boardstr[idx+2] - '0');
-			//cout << size_y << endl;
-			idx = idx + 3;
-		}
-		else if (boardstr[idx] == 'Z') {
-			size_z = boardstr[idx+1] - '0';
-			//cout << size_z << endl;
-			idx = idx + 2;
-		}
-		else if (boardstr[idx] == 'L') {
-			line_num++;
+        if (boardstr[idx] == 'X') {
+            size_x = (boardstr[idx+1] - '0') * 10 + (boardstr[idx+2] - '0');
+            idx += 3;
+        }
+        else if (boardstr[idx] == 'Y') {
+            size_y = (boardstr[idx+1] - '0') * 10 + (boardstr[idx+2] - '0');
+            idx += 3;
+        }
+        else if (boardstr[idx] == 'Z') {
+            size_z = boardstr[idx+1] - '0';
+            idx += 2;
+        }
+        else if (boardstr[idx] == 'L') {
+            //ap_uint<8> i = (boardstr[idx+1] - '0') * 10 + (boardstr[idx+2] - '0');
+            ap_uint<7> s_x = (boardstr[idx+1] - '0') * 10 + (boardstr[idx+2] - '0');
+            ap_uint<7> s_y = (boardstr[idx+3] - '0') * 10 + (boardstr[idx+4] - '0');
+            ap_uint<3> s_z = (boardstr[idx+5] - '0') - 1;
+            ap_uint<7> g_x = (boardstr[idx+6] - '0') * 10 + (boardstr[idx+7] - '0');
+            ap_uint<7> g_y = (boardstr[idx+8] - '0') * 10 + (boardstr[idx+9] - '0');
+            ap_uint<3> g_z = (boardstr[idx+10] - '0') - 1;
+            //cout << "L " << line_size << ": " << s_x << " " << s_y << " " << s_z << " "
+            //                                  << g_x << " " << g_y << " " << g_z << endl;
+            idx += 11;
 
-			ap_int<8> i = (boardstr[idx+1] - '0') * 10 + (boardstr[idx+2] - '0');
-			lx_0[i] = (boardstr[idx+3] - '0') * 10 + (boardstr[idx+4] - '0');
-			ly_0[i] = (boardstr[idx+5] - '0') * 10 + (boardstr[idx+6] - '0');
-			lz_0[i] = (boardstr[idx+7] - '0') - 1;
-			lx_1[i] = (boardstr[idx+8] - '0') * 10 + (boardstr[idx+9] - '0');
-			ly_1[i] = (boardstr[idx+10] - '0') * 10 + (boardstr[idx+11] - '0');
-			lz_1[i] = (boardstr[idx+12] - '0') - 1;
-			//cout << "L " << i << ": " << lx_0[i] << " " << ly_0[i] << " " << lz_0[i] << " " << lx_1[i] << " " << ly_1[i] << " " << lz_1[i] << endl;
-			idx = idx + 13;
+            // ƒXƒ^[ƒg‚ÆƒS[ƒ‹
+            starts[line_size] = (s_z << (BITWIDTH_X + BITWIDTH_Y)) & (s_y << BITWIDTH_X) & s_x;
+            goals[line_size]  = (g_z << (BITWIDTH_X + BITWIDTH_Y)) & (g_y << BITWIDTH_X) & g_x;
 
-			// ViaIDãŒå‰²ã‚Šå½“ã¦ã‚‰ã‚Œã¦ã„ã‚‹å ´åˆã¯è¾æ›¸ã«è¿½åŠ 
-			//if(!is.eof()){
-			//	int vid, vp;
-			//	is >> vid >> vp;
-			//	if(vid>=0 && vid<100){
-			//		line_to_viaid[i] = vid;
-			//		line_to_via_priority[i] = vp;
-			//	}
-			//}
+            // ‰Šúó‘Ô‚Å”š‚ª—×Ú‚µ‚Ä‚¢‚é‚©”»’f
+            ap_int<8> dx = g_x - s_x;
+            ap_int<8> dy = g_y - s_y;
+            ap_int<4> dz = g_z - s_z;
+            if ((dx == 0 && dy == 0 && (dz == 1 || dz == -1)) || (dx == 0 && (dy == 1 || dy == -1) && dz == 0) ||
+                ((dx == 1 || dx == -1) && dy == 0 && dz == 0)) {
+                adjacents[line_size] = true;
+            } else {
+                adjacents[line_size] = false;
+            }
 
-			// åˆæœŸçŠ¶æ…‹ã§æ•°å­—ãŒéš£æ¥ã—ã¦ã„ã‚‹ã‹åˆ¤æ–­
-			ap_int<7> dx = lx_0[i] - lx_1[i];
-			ap_int<7> dy = ly_0[i] - ly_1[i];
-			ap_int<5> dz = lz_0[i] - lz_1[i];
-			if ((dz == 0 && dx == 0 && (dy == 1 || dy == -1)) || (dz == 0 && (dx == 1 || dx == -1) && dy == 0)) {
-				adjacents[i] = true;
-			} else {
-				adjacents[i] = false;
-			}
+            line_size++;
+        }
 
-		}
-		else if (boardstr[idx] == 'V') {
-			via_num++;
+        // I’[ (null) •¶š
+        if (boardstr[idx] == 0) {
+            break;
+        }
+    }
+    //cout << size_x << " " << size_y << " " << size_z << endl;
 
-			ap_int<8> i = (boardstr[idx+1] - '0') * 10 + (boardstr[idx+2] - '0');
-			vx_0[i] = (boardstr[idx+3] - '0') * 10 + (boardstr[idx+4] - '0');
-			vy_0[i] = (boardstr[idx+5] - '0') * 10 + (boardstr[idx+6] - '0');
-			vz_0[i] = (boardstr[idx+7] - '0') - 1;
-			vx_1[i] = (boardstr[idx+8] - '0') * 10 + (boardstr[idx+9] - '0');
-			vy_1[i] = (boardstr[idx+10] - '0') * 10 + (boardstr[idx+11] - '0');
-			vz_1[i] = (boardstr[idx+12] - '0') - 1;
-			//cout << "V " << i << ": " << vx_0[i] << " " << vy_0[i] << " " << vz_0[i] << " " << vx_1[i] << " " << vy_1[i] << " " << vz_1[i] << endl;
-			idx = idx + 13;
-		}
+    // ƒ‹[ƒvƒJƒEƒ“ƒ^‚Í1ƒrƒbƒg—]•ª‚É—pˆÓ‚µ‚È‚¢‚ÆI—¹”»’è‚Å‚«‚È‚¢
+    for (ap_uint<18> i = 0; i < (ap_uint<18>)(MAX_CELLS); i++) {
+        weights[i] = 1;
+    }
 
-		if (boardstr[idx] == 0) break;
-	}
+    // ƒ‹[ƒvƒJƒEƒ“ƒ^‚Í1ƒrƒbƒg—]•ª‚É—pˆÓ‚µ‚È‚¢‚ÆI—¹”»’è‚Å‚«‚È‚¢
+    for (ap_uint<8> i = 0; i < (ap_uint<18>)(MAX_LINES); i++) {
+        paths_size[i] = 0;
+    }
 
-	board->init(size_x, size_y, size_z, line_num, via_num);
+    // —”‚Ì‰Šú‰»
+    mt_init_genrand(12345);
 
-	for (ap_int<8> i = 1; i <= line_num; i++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=90 avg=50
-		Box* trgt_box_0 = board->box(lx_0[i],ly_0[i],lz_0[i]);
-		Box* trgt_box_1 = board->box(lx_1[i],ly_1[i],lz_1[i]);
-		trgt_box_0->setTypeNumber();
-		trgt_box_1->setTypeNumber();
-		trgt_box_0->setIndex(i);
-		trgt_box_1->setIndex(i);
-		Line* trgt_line = board->line(i);
-		trgt_line->setSourcePort(lx_0[i],ly_0[i],lz_0[i]);
-		trgt_line->setSinkPort(lx_1[i],ly_1[i],lz_1[i]);
-		if(trgt_line->getSourceZ() > trgt_line->getSinkZ()){
-			trgt_line->changePort();
-		}
-		trgt_line->setHasLine(!adjacents[i]);
-	}
-	for (ap_int<8> i = 1; i <= via_num; i++) {
-#pragma HLS LOOP_TRIPCOUNT min=5 max=45 avg=25
-		Box* trgt_box_0 = board->box(vx_0[i],vy_0[i],vz_0[i]);
-		Box* trgt_box_1 = board->box(vx_1[i],vy_1[i],vz_1[i]);
-		trgt_box_0->setTypeVia();
-		trgt_box_1->setTypeVia();
-		trgt_box_0->setIndex(i);
-		trgt_box_1->setIndex(i);
-		Via* trgt_via = board->via(i);
-		trgt_via->setSourcePort(vx_0[i],vy_0[i],vz_0[i]);
-		trgt_via->setSinkPort(vx_1[i],vy_1[i],vz_1[i]);
-		if(trgt_via->getSourceZ() > trgt_via->getSinkZ()){
-			trgt_via->changePort();
-		}
-		for (ap_int<5> z = trgt_via->getSourceZ() + 1; z < trgt_via->getSinkZ(); z++) {
-#pragma HLS LOOP_TRIPCOUNT min=0 max=6 avg=1
-//#pragma HLS PIPELINE
-			Box* trgt_box_2 = board->box(vx_0[i],vy_0[i],z);
-			trgt_box_2->setTypeInterVia();
-			trgt_box_2->setIndex(i);
-		}
-	}
+    // ================================
+    // ‰Šú‰» END
+    // ================================
 
-	for (ap_int<5> z = 0; z < size_z; z++) {
-#pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=2
-		for (ap_int<7> y = 0; y < size_y; y++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=40 avg=20
-			for (ap_int<7> x = 0; x < size_x; x++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=40 avg=20
-//#pragma HLS PIPELINE
-				Box* trgt_box = board->box(x,y,z);
-				if(!(trgt_box->isTypeNumber() || trgt_box->isTypeVia() || trgt_box->isTypeInterVia())) trgt_box->setTypeBlank();
-			}
-		}
-	}
-}
+    //printBoard();
 
+    ap_int<8> output;
 
-bool isFinished(Board *board) {
-//#pragma HLS INLINE
+    // ‰Šúƒ‹[ƒeƒBƒ“ƒO
+    for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_size); i++) {
+#pragma HLS LOOP_TRIPCOUNT min=2 max=128 avg=50
 
-	bool for_check[MAX_LAYER][MAX_BOXES][MAX_BOXES];
-//#pragma HLS ARRAY_PARTITION variable=for_check block factor=40 dim=3
-	for (ap_int<5> z = 0; z < board->getSizeZ(); z++) {
-#pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=2
-		for (ap_int<7> y = 0; y < board->getSizeY(); y++){
-#pragma HLS LOOP_TRIPCOUNT min=10 max=40 avg=20
-			for (ap_int<7> x = 0; x < board->getSizeX(); x++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=40 avg=20
-//#pragma HLS PIPELINE
-				for_check[z][y][x] = false;
-			}
-		}
-	}
-	for (ap_int<8> i = 1; i <= board->getLineNum(); i++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=90 avg=50
-		Line* trgt_line = board->line(i);
-		for (ap_uint<8> j = 0; j < trgt_line->track_index; j++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=160 avg=40
-//#pragma HLS PIPELINE
-			Point p = (trgt_line->track)[j];
-			ap_int<7> point_x = p.x;
-			ap_int<7> point_y = p.y;
-			ap_int<5> point_z = p.z;
-			if(for_check[point_z][point_y][point_x]){ return false; }
-			else{ for_check[point_z][point_y][point_x] = true; }
-		}
-	}
+        // ”š‚ª—×Ú‚·‚éê‡ƒXƒLƒbƒv
+        if (adjacents[i] == false) {
+            continue;
+        }
 
-	return true;
-}
+        // ƒ_ƒCƒNƒXƒgƒ‰–@
+        search(size_x, size_y, size_z, starts[i], goals[i], weights);
+    }
 
-// è§£ãƒœãƒ¼ãƒ‰ã‚’ç”Ÿæˆ
-void generateSolution(char boardstr[BOARDSTR_SIZE], Board *board) {
+    // ‰ğ“±o‚Å‚«‚È‚©‚Á‚½ê‡
+    /*if (isFinished(board) == false) {
+        *status = 4;
+        return false;
+    }*/
 
-	ap_int<8> boardmat[MAX_LAYER][MAX_BOXES][MAX_BOXES];
-
-	for (ap_int<5> z = 0; z < board->getSizeZ(); z++) {
-#pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=2
-		for (ap_int<7> y = 0; y < board->getSizeY(); y++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=40 avg=20
-			for (ap_int<7> x = 0; x < board->getSizeX(); x++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=40 avg=20
-//#pragma HLS PIPELINE
-				boardmat[z][y][x] = 0;
-			}
-		}
-	}
-	for (ap_int<8> i = 1; i <= board->getLineNum(); i++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=90 avg=50
-		Line* trgt_line = board->line(i);
-		if(!trgt_line->getHasLine()){
-			boardmat[trgt_line->getSourceZ()][trgt_line->getSourceY()][trgt_line->getSourceX()] = i;
-			boardmat[trgt_line->getSinkZ()][trgt_line->getSinkY()][trgt_line->getSinkX()] = i;
-			continue;
-		}
-		for (ap_uint<8> j = 0; j < trgt_line->track_index; j++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=160 avg=40
-//#pragma HLS PIPELINE
-			Point p = (trgt_line->track)[j];
-			ap_int<7> point_x = p.x;
-			ap_int<7> point_y = p.y;
-			ap_int<5> point_z = p.z;
-			boardmat[point_z][point_y][point_x] = i;
-		}
-	}
-	for (ap_int<8> i = 1; i <= board->getViaNum(); i++) {
-#pragma HLS LOOP_TRIPCOUNT min=5 max=45 avg=25
-		Via* trgt_via = board->via(i);
-		ap_int<7> via_x = trgt_via->getSourceX();
-		ap_int<7> via_y = trgt_via->getSourceY();
-		ap_int<5> via_z = trgt_via->getSourceZ();
-		ap_int<8> line_num = boardmat[via_z][via_y][via_x]; 
-		for (ap_int<5> z = via_z + 1; z < trgt_via->getSinkZ(); z++) {
-#pragma HLS LOOP_TRIPCOUNT min=0 max=6 avg=1
-//#pragma HLS PIPELINE
-			boardmat[z][via_y][via_x] = line_num;
-		}
-	}
-
-	// æ–‡å­—åˆ—åŒ–
-	ap_int<14> i = 0;
-	for (ap_int<5> z = 0; z < board->getSizeZ(); z++) {
-#pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=2
-		for (ap_int<7> y = 0; y < board->getSizeY(); y++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=40 avg=20
-			for (ap_int<7> x = 0; x < board->getSizeX(); x++) {
-#pragma HLS LOOP_TRIPCOUNT min=10 max=40 avg=20
-//#pragma HLS PIPELINE
-				boardstr[i] = boardmat[z][y][x];
-				i++;
-			}
-		}
-	}
-
-#if 0
-	cout << endl;
-	cout << "SOLUTION" << endl;
-	cout << "========" << endl;
-
-	for(int z=0;z<board->getSizeZ();z++){
-		cout << "LAYER " << z+1 << endl;
-		for(int y=0;y<board->getSizeY();y++){
-			for(int x=0;x<board->getSizeX();x++){
-				int n = for_print[z][y][x];
-				if(n < 0){
-					// ç·šãŒå¼•ã‹ã‚Œã¦ã„ãªã„ãƒã‚¹ï¼š"00"è¡¨ç¤º
-					cout << " \033[37m00\033[0m";
-				}else{
-					Box* trgt_box = board->box(x,y,z);
-					if(trgt_box->isTypeNumber()){
-						// ç·šãŒå¼•ã‹ã‚Œã¦ã„ã‚‹ãƒã‚¹ [ç«¯ç‚¹] (2æ¡è¡¨ç¤º)
-						cout << " " << getcolorescape_fore(n) << setfill('0') << setw(2) << n << "\033[0m";
-					}else{
-						// ç·šãŒå¼•ã‹ã‚Œã¦ã„ã‚‹ãƒã‚¹ [éç«¯ç‚¹] (2æ¡è¡¨ç¤º)
-						cout << " " << getcolorescape(n) << setfill('0') << setw(2) << n << "\033[0m";
-					}
-				}
-			}
-			cout << endl;
-		}
-		cout << endl;
-	}
-#endif
-
+    *status = 0;
+    return true;
 }

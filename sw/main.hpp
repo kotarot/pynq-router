@@ -4,8 +4,8 @@
  * for Vivado HLS
  */
 
-#ifndef _MAIN_HPP_
-#define _MAIN_HPP_
+#ifndef __MAIN_HPP__
+#define __MAIN_HPP__
 
 #ifdef SOFTWARE
 #include "ap_int.h"
@@ -13,6 +13,7 @@
 #include <ap_int.h>
 #endif
 
+#ifdef SOFTWARE
 #include <iomanip>
 #include <iostream>
 #include <fstream>
@@ -24,106 +25,33 @@
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
+#endif
 
 using namespace std;
 
 #define NOT_USE -1
 
-// Inter-Box
-#define NORTH 0
-#define EAST  1
-#define SOUTH 2
-#define WEST  3
+// Šeíİ’è’l
+#define MAX_BOXES 72     // X, Y ‚ÌÅ‘å’l (7ƒrƒbƒg‚Åû‚Ü‚é)
+#define BITWIDTH_X 7
+#define BITWIDTH_Y 7
+#define MAX_LAYER 8      // Z ‚ÌÅ‘å’l (3ƒrƒbƒg‚Åû‚Ü‚é)
+#define BITWIDTH_Z 3
+#define MAX_CELLS 131072 // ƒZƒ‹‚Ì‘” =128*128*8 (17ƒrƒbƒg‚Åû‚Ü‚é)
+#define MAX_LINES 128    // ƒ‰ƒCƒ“”‚ÌÅ‘å’l (7ƒrƒbƒg‚Åû‚Ü‚é)
+#define MAX_PATH 256     // 1‚Â‚Ìƒ‰ƒCƒ“‚ª‘Î‰‚·‚éƒZƒ‹”‚ÌÅ‘å’l (8ƒrƒbƒg‚Åû‚Ü‚é)
 
-// Intra-Box
-#define NE 0
-#define NW 1
-#define SE 2
-#define SW 3
-
-// Touch & Cross
-#define NT 1  // ãƒ«ãƒ¼ãƒ—æ¯ã«ãƒšãƒŠãƒ«ãƒ†ã‚£ã®æ›´æ–°ã™ã‚‹ã¨ãã®å®šæ•° (ã‚¿ãƒƒãƒ)
-#define NC 2  // ãƒ«ãƒ¼ãƒ—æ¯ã«ãƒšãƒŠãƒ«ãƒ†ã‚£ã®æ›´æ–°ã™ã‚‹ã¨ãã®å®šæ•° (ã‚¯ãƒ­ã‚¹)
-#define NV 2  // ãƒ«ãƒ¼ãƒ—æ¯ã«ãƒšãƒŠãƒ«ãƒ†ã‚£ã®æ›´æ–°ã™ã‚‹ã¨ãã®å®šæ•° (ãƒ“ã‚¢é‡è¤‡)
-#define ML 1  // ã‚³ã‚¹ãƒˆã®è¨ˆç®—ï¼ˆé…ç·šé•·ï¼‰
-#define BT 1  // ã‚³ã‚¹ãƒˆã®è¨ˆç®—ï¼ˆæ›²ãŒã‚Šå›æ•°ï¼‰
-
-#define O_LOOP 1000 // å¤–ãƒ«ãƒ¼ãƒ—å›æ•°
-#define I_LOOP 1000 // å†…ãƒ«ãƒ¼ãƒ—å›æ•°
-
-// å„ç¨®è¨­å®šå€¤
-#define MAX_BOXES 36
-#define MAX_LAYER 8
-#define MAX_LINES 120
-#define MAX_VIAS  120
-#define MAX_TRACKS 160
-#define MAX_SEARCH 8000
-
-#define BOARDSTR_SIZE 12800 // = 8 * 40 * 40
-
-struct Point{
-	ap_int<7> x;
-	ap_int<7> y;
-	ap_int<5> z;
-};
-
-#include "board.hpp"
-#include "box.hpp"
-#include "line.hpp"
-#include "via.hpp"
-
-struct Search{
-	ap_int<7> x;
-	ap_int<7> y;
-	ap_int<8> d; // æ–¹å‘
-};
-
-struct Direction{
-	// æ–¹å‘
-	bool n;	// åŒ—
-	bool s;	// å—
-	bool e;	// æ±
-	bool w;	// è¥¿
-};
-
-struct IntraBox_4{
-	ap_int<16> ne;
-	ap_int<16> nw;
-	ap_int<16> se;
-	ap_int<16> sw;
-	Direction d_ne;
-	Direction d_nw;
-	Direction d_se;
-	Direction d_sw;
-};
-
-struct Direction_R{
-	// æ–¹å‘
-	bool n;	// åŒ—
-	bool s;	// å—
-	bool e;	// æ±
-	bool w;	// è¥¿
-	// ã²ã¨ã¤å‰ã®æ–¹å‘
-	ap_int<8> c_n;
-	ap_int<8> c_s;
-	ap_int<8> c_e;
-	ap_int<8> c_w;
-};
-
-struct IntraBox_1{
-	ap_int<16> cost;
-	Direction_R d;
-};
+#define BOARDSTR_SIZE 32768 // ƒ{[ƒhƒXƒgƒŠƒ“ƒO‚ÌÅ‘å•¶š” (15ƒrƒbƒg‚Åû‚Ü‚é : ’l‚Í‚Æ‚è‚ ‚¦‚¸)
 
 
-// ãƒ¡ãƒ«ã‚»ãƒ³ãƒŒãƒ»ãƒ„ã‚¤ã‚¹ã‚¿
+// ƒƒ‹ƒZƒ“ƒkEƒcƒCƒXƒ^
 void mt_init_genrand(unsigned long s);
 unsigned long mt_genrand_int32(int a, int b);
 
-bool nlsolver(char boardstr[BOARDSTR_SIZE], ap_int<8> *status);
-void initialize(char boardstr[BOARDSTR_SIZE], Board *board);
-bool isFinished(Board *board);
-void generateSolution(char boardstr[BOARDSTR_SIZE], Board *board);
+bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status);
+//void initialize(char boardstr[BOARDSTR_SIZE], Board *board);
+//bool isFinished(Board *board);
+//void generateSolution(char boardstr[BOARDSTR_SIZE], Board *board);
 
 
-#endif /*_MAIN_HPP_*/
+#endif /* __MAIN_HPP__ */
