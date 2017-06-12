@@ -4,10 +4,10 @@
  * for Vivado HLS
  */
 
-#ifndef SOFTWARE
-#include <stdio.h>
-#include <string.h>
-#endif
+//#ifndef SOFTWARE
+//#include <stdio.h>
+//#include <string.h>
+//#endif
 
 #ifdef SOFTWARE
 #include "ap_int.h"
@@ -43,7 +43,7 @@ unsigned long mt_genrand_int32(int a, int b) {
 // ================================ //
 
 // 参考 https://highlevel-synthesis.com/2017/02/10/lfsr-in-hls/
-static ap_uint<32> lfsr;
+/*static ap_uint<32> lfsr;
 
 void lfsr_random_init(ap_uint<32> seed) {
 #pragma HLS INLINE
@@ -68,7 +68,7 @@ ap_uint<32> lfsr_random() {
 ap_uint<32> lfsr_random_uint32(ap_uint<32> a, ap_uint<32> b) {
 #pragma HLS INLINE
     return lfsr_random() % (b - a + 1) + a;
-}
+}*/
 #endif
 
 
@@ -91,18 +91,20 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
     ap_uint<8> line_num = 0;                // ラインの総数
 
     ap_uint<17> starts[MAX_LINES];          // ラインのスタートリスト
-//#pragma HLS ARRAY_PARTITION variable=starts complete dim=0
+#pragma HLS ARRAY_PARTITION variable=starts complete dim=0
     ap_uint<17> goals[MAX_LINES];           // ラインのゴールリスト
-//#pragma HLS ARRAY_PARTITION variable=goals complete dim=0
+#pragma HLS ARRAY_PARTITION variable=goals complete dim=0
 
     ap_uint<8> weights[MAX_CELLS];          // セルの重み
     ap_uint<8> paths_size[MAX_LINES];       // ラインが対応するセルIDのサイズ
-//#pragma HLS ARRAY_PARTITION variable=paths_size complete dim=0
+#pragma HLS ARRAY_PARTITION variable=paths_size complete dim=0
     ap_uint<17> paths[MAX_LINES][MAX_PATH]; // ラインが対応するセルIDの集合 (スタートとゴールは除く)
     bool adjacents[MAX_LINES];              // スタートとゴールが隣接しているライン
-//#pragma HLS ARRAY_PARTITION variable=adjacents complete dim=0
+#pragma HLS ARRAY_PARTITION variable=adjacents complete dim=0
 
+#ifdef SOFTWARE
     ap_int<9> boardmat[MAX_CELLS];          // ボードマトリックス
+#endif
 
     // ================================
     // 初期化 BEGIN
@@ -184,7 +186,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
 #if USE_MT
     mt_init_genrand(12345);
 #else
-    lfsr_random_init(12345);
+    //lfsr_random_init(12345);
 #endif
 
     // 乱数テスト
@@ -209,13 +211,13 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
 //#pragma HLS UNROLL
 #pragma HLS LOOP_TRIPCOUNT min=2 max=128 avg=50
 
-            // 数字が隣接する場合スキップ
-            if (adjacents[i] == true) {
-                continue;
-            }
+            // 数字が隣接する場合スキップ、そうでない場合は実行
+            if (adjacents[i] == false) {
 
-            // ダイクストラ法
-            search(&(paths_size[i]), paths[i], size_x, size_y, size_z, starts[i], goals[i], weights);
+                // ダイクストラ法
+                search(&(paths_size[i]), paths[i], size_x, size_y, size_z, starts[i], goals[i], weights);
+
+            }
         }
 
         // 全ラインのルーティング後
@@ -226,15 +228,24 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
             overlaps[i] = 0;
         }
         for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
+#pragma HLS LOOP_TRIPCOUNT min=2 max=128 avg=50
             (overlaps[starts[i]])++;
             (overlaps[goals[i]])++;
-            for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
-                ap_uint<17> cell_id = paths[i][j];
-                if (0 < overlaps[cell_id]) {
-                    has_overlap = true;
-                    (overlaps[cell_id])++;
+
+            // 数字が隣接する場合スキップ、そうでない場合は実行
+            if (adjacents[i] == false) {
+
+                for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
+#pragma HLS LOOP_TRIPCOUNT min=1 max=256 avg=50
+                    ap_uint<17> cell_id = paths[i][j];
+                    if (0 < overlaps[cell_id]) {
+                        has_overlap = true;
+                        (overlaps[cell_id])++;
+                    }
                 }
+
             }
+
         }
         // (1') オーバーラップなければ探索終了
         if (has_overlap == false) {
@@ -260,7 +271,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
     // ================================
     // 解生成 BEGIN
     // ================================
-
+#ifdef SOFTWARE
     // 空白
     for (ap_uint<18> i = 0; i < (ap_uint<18>)(MAX_CELLS); i++) {
         boardmat[i] = 0;
@@ -269,9 +280,11 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
     // このソルバでのラインIDを+1して表示する
     // なぜなら空白を 0 で表すことにするからラインIDは 1 以上にしたい
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
+#pragma HLS LOOP_TRIPCOUNT min=2 max=128 avg=50
         boardmat[starts[i]] = (i + 1);
         boardmat[goals[i]]  = (i + 1);
         for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
+#pragma HLS LOOP_TRIPCOUNT min=1 max=256 avg=50
             boardmat[paths[i][j]] = (i + 1);
         }
     }
@@ -279,15 +292,18 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
     // boardmat を文字列化 (ただし、表示できる文字とは限らない)
     ap_uint<17> i = 0;
     for (ap_uint<4> z = 0; z < (ap_uint<4>)(size_z); z++) {
+#pragma HLS LOOP_TRIPCOUNT min=4 max=72 avg=20
         for (ap_uint<8> y = 0; y < (ap_uint<8>)(size_y); y++) {
+#pragma HLS LOOP_TRIPCOUNT min=4 max=72 avg=20
             for (ap_uint<8> x = 0; x < (ap_uint<8>)(size_x); x++) {
+#pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=4
                 ap_uint<17> cell_id = ((ap_uint<17>)z << (BITWIDTH_X + BITWIDTH_Y)) | ((ap_uint<17>)y << BITWIDTH_X) | (ap_uint<17>)x;
                 boardstr[i] = boardmat[cell_id];
                 i++;
             }
         }
     }
-
+#endif
     // ================================
     // 解生成 END
     // ================================
@@ -316,8 +332,8 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
     // プライオリティ・キュー
     int pq_len = 0;
     int pq_size = 0;
-    int pq_nodes_priority[MAX_PQ];
-    int pq_nodes_data[MAX_PQ];
+    ap_uint<8> pq_nodes_priority[MAX_PQ];
+    ap_uint<17> pq_nodes_data[MAX_PQ];
 
     // プライオリティ・キューのテスト
     //pq_push(10, 1, &pq_len, &pq_size, pq_nodes_priority, pq_nodes_data);
@@ -341,8 +357,9 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
     pq_push(0, start, &pq_len, &pq_size, pq_nodes_priority, pq_nodes_data); // 始点をpush
 
     while (0 < pq_len) {
-        int prov_cost;
-        int src;
+#pragma HLS LOOP_TRIPCOUNT min=1 max=100 avg=10
+        ap_uint<8> prov_cost;
+        ap_uint<17> src;
         pq_pop(&prov_cost, &src, &pq_len, &pq_size, pq_nodes_priority, pq_nodes_data);
 
         // プライオリティキューに格納されている最短距離が，現在計算できている最短距離より大きければ，distの更新をする必要はない
@@ -352,15 +369,15 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
             // (0) コスト
             ap_uint<8> cost = w[src];
             // (1) ノードIDから3次元座標をマスクして抜き出す
-            int src_x =  src &  BITMASK_X;
-            int src_y = (src & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
-            int src_z = (src & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
+            ap_uint<7> src_x =  src &  BITMASK_X;
+            ap_uint<7> src_y = (src & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
+            ap_uint<3> src_z = (src & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
             //cout << src << " " << src_x << " " << src_y << " " << src_z << endl;
             // (2) 3次元座標で隣接するノード (6個) を調べる
-            for (int a = 0; a < 6; a++) {
-                int dest_x = src_x;
-                int dest_y = src_y;
-                int dest_z = src_z;
+            for (ap_uint<3> a = 0; a < 6; a++) {
+                ap_int<9> dest_x = (ap_int<9>)src_x;
+                ap_int<9> dest_y = (ap_int<9>)src_y;
+                ap_int<5> dest_z = (ap_int<9>)src_z;
                 if (a == 0) { dest_x -= 1; }
                 if (a == 1) { dest_x += 1; }
                 if (a == 2) { dest_y -= 1; }
@@ -368,8 +385,8 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
                 if (a == 4) { dest_z -= 1; }
                 if (a == 5) { dest_z += 1; }
 
-                int dest = ((ap_uint<17>)dest_z << (BITWIDTH_X + BITWIDTH_Y)) | ((ap_uint<17>)dest_y << BITWIDTH_X) | (ap_uint<17>)dest_x;
                 if (0 <= dest_x && dest_x < size_x && 0 <= dest_y && dest_y < size_y && 0 <= dest_z && dest_z < size_z) {
+                    ap_uint<17> dest = ((ap_uint<17>)dest_z << (BITWIDTH_X + BITWIDTH_Y)) | ((ap_uint<17>)dest_y << BITWIDTH_X) | (ap_uint<17>)dest_x;
                     if (dist[dest] > dist[src] + cost) {
                         dist[dest] = dist[src] + cost;
                             // distの更新
@@ -387,6 +404,7 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
     // ゴールからスタートへの順番で表示される (ゴールとスタートは含まれない)
     ap_uint<17> t = goal;
 
+#ifdef DEBUG_PRINT
     int start_x =  start &  BITMASK_X;
     int start_y = (start & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
     int start_z = (start & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
@@ -395,13 +413,18 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
     int goal_z  = (goal  & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
     cout << start << " (" << start_x << ", " << start_y << ", " << start_z << ") -> "
          << goal  << " (" << goal_x  << ", " << goal_y  << ", " << goal_z  << ")" << endl;
+#endif
 
-    int p = 0;
+    ap_uint<8> p = 0;
     while (prev[t] != start) {
-        int t_x =  prev[t] &  BITMASK_X;
-        int t_y = (prev[t] & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
-        int t_z = (prev[t] & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
+#pragma HLS LOOP_TRIPCOUNT min=1 max=256 avg=50
+
+#ifdef DEBUG_PRINT
+        ap_uint<7> t_x =  prev[t] &  BITMASK_X;
+        ap_uint<7> t_y = (prev[t] & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
+        ap_uint<3> t_z = (prev[t] & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
         cout << "  via " << prev[t] << " (" << t_x << ", " << t_y << ", " << t_z << ")" << endl;
+#endif
 
         // マッピングへ記録
         path[p] = prev[t];
@@ -414,7 +437,7 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
 
 // プライオリティ・キュー (ヒープ)
 // 参考 https://rosettacode.org/wiki/Priority_queue#C
-void pq_push(int priority, int data, int *pq_len, int *pq_size, int pq_nodes_priority[MAX_PQ], int pq_nodes_data[MAX_PQ]) {
+void pq_push(ap_uint<8> priority, ap_uint<17> data, int *pq_len, int *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]) {
 
     (*pq_len)++;
     if (*pq_len >= *pq_size) {
@@ -427,6 +450,7 @@ void pq_push(int priority, int data, int *pq_len, int *pq_size, int pq_nodes_pri
     int i = *pq_len;
     int j = i / 2;
     while (i > 1 && pq_nodes_priority[j] > priority) {
+#pragma HLS LOOP_TRIPCOUNT min=1 max=10 avg=5
         pq_nodes_priority[i] = pq_nodes_priority[j];
         pq_nodes_data[i]     = pq_nodes_data[j];
         i = j;
@@ -436,7 +460,7 @@ void pq_push(int priority, int data, int *pq_len, int *pq_size, int pq_nodes_pri
     pq_nodes_data[i]     = data;
 }
 
-void pq_pop(int *ret_priority, int *ret_data, int *pq_len, int *pq_size, int pq_nodes_priority[MAX_PQ], int pq_nodes_data[MAX_PQ]) {
+void pq_pop(ap_uint<8> *ret_priority, ap_uint<17> *ret_data, int *pq_len, int *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]) {
     *ret_priority = pq_nodes_priority[1];
     *ret_data = pq_nodes_data[1];
     pq_nodes_priority[1] = pq_nodes_priority[*pq_len];
@@ -444,6 +468,7 @@ void pq_pop(int *ret_priority, int *ret_data, int *pq_len, int *pq_size, int pq_
     (*pq_len)--;
     int i = 1;
     while (1) {
+#pragma HLS LOOP_TRIPCOUNT min=1 max=10 avg=5
         int k = i;
         int j = 2 * i;
         if (j <= *pq_len && pq_nodes_priority[j] < pq_nodes_priority[k]) {

@@ -20,6 +20,9 @@
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
+
+#define DEBUG_PRINT
+
 #endif
 
 #ifdef SOFTWARE
@@ -63,9 +66,9 @@ using namespace std;
 void mt_init_genrand(unsigned long s);
 unsigned long mt_genrand_int32(int a, int b);
 #else
-void lfsr_random_init(ap_uint<32> seed);
-ap_uint<32> lfsr_random();
-ap_uint<32> lfsr_random_uint32(ap_uint<32> a, ap_uint<32> b);
+//void lfsr_random_init(ap_uint<32> seed);
+//ap_uint<32> lfsr_random();
+//ap_uint<32> lfsr_random_uint32(ap_uint<32> a, ap_uint<32> b);
 #endif
 
 bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status);
@@ -76,7 +79,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status);
 void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x, ap_uint<7> size_y, ap_uint<3> size_z,
     ap_uint<17> start, ap_uint<17> goal, ap_uint<8> w[MAX_CELLS]);
 
-void pq_push(int priority, int data, int *pq_len, int *pq_size, int pq_nodes_priority[MAX_PQ], int pq_nodes_data[MAX_PQ]);
-void pq_pop(int *ret_priority, int *ret_data, int *pq_len, int *pq_size, int pq_nodes_priority[MAX_PQ], int pq_nodes_data[MAX_PQ]);
+void pq_push(ap_uint<8> priority, ap_uint<17> data, int *pq_len, int *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]);
+void pq_pop(ap_uint<8> *ret_priority, ap_uint<17> *ret_data, int *pq_len, int *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]);
 
 #endif /* __MAIN_HPP__ */
