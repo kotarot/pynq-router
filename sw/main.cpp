@@ -266,6 +266,8 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
         boardmat[i] = 0;
     }
     // ライン
+    // このソルバでのラインIDを+1して表示する
+    // なぜなら空白を 0 で表すことにするからラインIDは 1 以上にしたい
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
         boardmat[starts[i]] = (i + 1);
         boardmat[goals[i]]  = (i + 1);
@@ -274,6 +276,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
         }
     }
 
+    // boardmat を文字列化 (ただし、表示できる文字とは限らない)
     ap_uint<17> i = 0;
     for (ap_uint<4> z = 0; z < (ap_uint<4>)(size_z); z++) {
         for (ap_uint<8> y = 0; y < (ap_uint<8>)(size_y); y++) {
@@ -383,7 +386,16 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
     // 経路を出力
     // ゴールからスタートへの順番で表示される (ゴールとスタートは含まれない)
     ap_uint<17> t = goal;
-    cout << start << " -> " << goal << endl;
+
+    int start_x =  start &  BITMASK_X;
+    int start_y = (start & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
+    int start_z = (start & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
+    int goal_x  =  goal  &  BITMASK_X;
+    int goal_y  = (goal  & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
+    int goal_z  = (goal  & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
+    cout << start << " (" << start_x << ", " << start_y << ", " << start_z << ") -> "
+         << goal  << " (" << goal_x  << ", " << goal_y  << ", " << goal_z  << ")" << endl;
+
     int p = 0;
     while (prev[t] != start) {
         int t_x =  prev[t] &  BITMASK_X;
