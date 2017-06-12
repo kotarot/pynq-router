@@ -50,19 +50,19 @@ ap_uint<32> lfsr_random_uint32(ap_uint<32> a, ap_uint<32> b) {
 // メインモジュール
 // ================================ //
 
+// ボードに関する変数
+static ap_uint<7> size_x;       // ボードの X サイズ
+static ap_uint<7> size_y;       // ボードの Y サイズ
+static ap_uint<3> size_z;       // ボードの Z サイズ
+
+static ap_uint<7> line_num = 0; // ラインの総数
+
 bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
 #pragma HLS INTERFACE s_axilite port=boardstr bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=status bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=return bundle=AXI4LS
 
     *status = -127;
-
-    // ボードに関する変数
-    ap_uint<7> size_x;                      // ボードの X サイズ
-    ap_uint<7> size_y;                      // ボードの Y サイズ
-    ap_uint<3> size_z;                      // ボードの Z サイズ
-
-    ap_uint<8> line_num = 0;                // ラインの総数
 
     ap_uint<17> starts[MAX_LINES];          // ラインのスタートリスト
 #pragma HLS ARRAY_PARTITION variable=starts complete dim=0
@@ -179,7 +179,10 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
             if (adjacents[i] == false) {
 
                 // ダイクストラ法
-                search(&(paths_size[i]), paths[i], size_x, size_y, size_z, starts[i], goals[i], weights);
+#ifdef DEBUG_PRINT
+                cout << "LINE #" << (i + 1) << endl;
+#endif
+                search(&(paths_size[i]), paths[i], starts[i], goals[i], weights);
 
             }
         }
@@ -284,8 +287,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
 // Pythonでダイクストラアルゴリズムを実装した - フツーって言うなぁ！
 // http://lethe2211.hatenablog.com/entry/2014/12/30/011030
 // をベース
-void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x, ap_uint<7> size_y, ap_uint<3> size_z,
-    ap_uint<17> start, ap_uint<17> goal, ap_uint<8> w[]) {
+void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start, ap_uint<17> goal, ap_uint<8> w[MAX_CELLS]) {
 
     ap_uint<16> dist[MAX_CELLS]; // 始点から各頂点までの最短距離を格納する
     ap_uint<17> prev[MAX_CELLS]; // 最短経路における，その頂点の前の頂点のIDを格納する
@@ -294,16 +296,19 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
     }
 
     // プライオリティ・キュー
-    int pq_len = 0;
-    int pq_size = 0;
+    ap_uint<16> pq_len = 0;
+    ap_uint<16> pq_size = 0;
     ap_uint<8> pq_nodes_priority[MAX_PQ];
+#pragma HLS ARRAY_PARTITION variable=pq_nodes_priority complete dim=0
     ap_uint<17> pq_nodes_data[MAX_PQ];
+#pragma HLS ARRAY_PARTITION variable=pq_nodes_data complete dim=0
 
     dist[start] = 0;
     pq_push(0, start, &pq_len, &pq_size, pq_nodes_priority, pq_nodes_data); // 始点をpush
 
     while (0 < pq_len) {
-#pragma HLS LOOP_TRIPCOUNT min=1 max=100 avg=10
+#pragma HLS LOOP_TRIPCOUNT min=1 max=2000 avg=1000
+
         ap_uint<8> prov_cost;
         ap_uint<17> src;
         pq_pop(&prov_cost, &src, &pq_len, &pq_size, pq_nodes_priority, pq_nodes_data);
@@ -331,7 +336,7 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
                 if (a == 4) { dest_z -= 1; }
                 if (a == 5) { dest_z += 1; }
 
-                if (0 <= dest_x && dest_x < size_x && 0 <= dest_y && dest_y < size_y && 0 <= dest_z && dest_z < size_z) {
+                if (0 <= dest_x && dest_x < (ap_int<9>)size_x && 0 <= dest_y && dest_y < (ap_int<9>)size_y && 0 <= dest_z && dest_z < (ap_int<5>)size_z) {
                     ap_uint<17> dest = ((ap_uint<17>)dest_z << (BITWIDTH_X + BITWIDTH_Y)) | ((ap_uint<17>)dest_y << BITWIDTH_X) | (ap_uint<17>)dest_x;
                     if (dist[dest] > dist[src] + cost) {
                         dist[dest] = dist[src] + cost;
@@ -357,8 +362,8 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
     int goal_x  =  goal  &  BITMASK_X;
     int goal_y  = (goal  & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
     int goal_z  = (goal  & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
-    cout << start << " (" << start_x << ", " << start_y << ", " << start_z << ") -> "
-         << goal  << " (" << goal_x  << ", " << goal_y  << ", " << goal_z  << ")" << endl;
+    cout << "(" << start_x << ", " << start_y << ", " << start_z << ") = " << start << " -> "
+         << "(" << goal_x  << ", " << goal_y  << ", " << goal_z  << ") = " << goal << endl;
 #endif
 
     ap_uint<8> p = 0;
@@ -369,7 +374,7 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
         ap_uint<7> t_x =  prev[t] &  BITMASK_X;
         ap_uint<7> t_y = (prev[t] & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
         ap_uint<3> t_z = (prev[t] & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
-        cout << "  via " << prev[t] << " (" << t_x << ", " << t_y << ", " << t_z << ")" << endl;
+        cout << "  via " << "(" << t_x << ", " << t_y << ", " << t_z << ") = " << prev[t] << endl;
 #endif
 
         // マッピングへ記録
@@ -383,7 +388,7 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
 
 // プライオリティ・キュー (ヒープ)
 // 参考 https://rosettacode.org/wiki/Priority_queue#C
-void pq_push(ap_uint<8> priority, ap_uint<17> data, int *pq_len, int *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]) {
+void pq_push(ap_uint<8> priority, ap_uint<17> data, ap_uint<16> *pq_len, ap_uint<16> *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]) {
 
     (*pq_len)++;
     if (*pq_len >= *pq_size) {
@@ -393,8 +398,8 @@ void pq_push(ap_uint<8> priority, ap_uint<17> data, int *pq_len, int *pq_size, a
             *pq_size = 4;
         }
     }
-    int i = *pq_len;
-    int j = i / 2;
+    ap_uint<16> i = *pq_len;
+    ap_uint<16> j = i / 2;
     while (i > 1 && pq_nodes_priority[j] > priority) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=10 avg=5
         pq_nodes_priority[i] = pq_nodes_priority[j];
@@ -406,17 +411,17 @@ void pq_push(ap_uint<8> priority, ap_uint<17> data, int *pq_len, int *pq_size, a
     pq_nodes_data[i]     = data;
 }
 
-void pq_pop(ap_uint<8> *ret_priority, ap_uint<17> *ret_data, int *pq_len, int *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]) {
+void pq_pop(ap_uint<8> *ret_priority, ap_uint<17> *ret_data, ap_uint<16> *pq_len, ap_uint<16> *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]) {
     *ret_priority = pq_nodes_priority[1];
     *ret_data = pq_nodes_data[1];
     pq_nodes_priority[1] = pq_nodes_priority[*pq_len];
     pq_nodes_data[1]     = pq_nodes_data[*pq_len];
     (*pq_len)--;
-    int i = 1;
+    ap_uint<16> i = 1;
     while (1) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=10 avg=5
-        int k = i;
-        int j = 2 * i;
+        ap_uint<16> k = i;
+        ap_uint<16> j = 2 * i;
         if (j <= *pq_len && pq_nodes_priority[j] < pq_nodes_priority[k]) {
             k = j;
         }

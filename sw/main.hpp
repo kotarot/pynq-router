@@ -72,10 +72,9 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status);
 //bool isFinished(Board *board);
 //void solution(char boardstr[BOARDSTR_SIZE], ap_uint<8> line_num, ap_uint<17> starts[MAX_LINE]);
 
-void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x, ap_uint<7> size_y, ap_uint<3> size_z,
-    ap_uint<17> start, ap_uint<17> goal, ap_uint<8> w[MAX_CELLS]);
+void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start, ap_uint<17> goal, ap_uint<8> w[MAX_WEIGHT]);
 
-void pq_push(ap_uint<8> priority, ap_uint<17> data, int *pq_len, int *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]);
-void pq_pop(ap_uint<8> *ret_priority, ap_uint<17> *ret_data, int *pq_len, int *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]);
+void pq_push(ap_uint<8> priority, ap_uint<17> data, ap_uint<16> *pq_len, ap_uint<16> *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]);
+void pq_pop(ap_uint<8> *ret_priority, ap_uint<17> *ret_data, ap_uint<16> *pq_len, ap_uint<16> *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]);
 
 #endif /* __MAIN_HPP__ */
