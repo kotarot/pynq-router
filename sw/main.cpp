@@ -4,11 +4,6 @@
  * for Vivado HLS
  */
 
-//#ifndef SOFTWARE
-//#include <stdio.h>
-//#include <string.h>
-//#endif
-
 #ifdef SOFTWARE
 #include "ap_int.h"
 #else
@@ -18,26 +13,6 @@
 #include "./main.hpp"
 
 
-#ifdef USE_MT
-// ================================ //
-// メルセンヌ・ツイスタ
-// ================================ //
-#include "mt19937ar.hpp"
-
-void mt_init_genrand(unsigned long s) {
-#pragma HLS INLINE
-    init_genrand(s);
-}
-
-// AからBの範囲 (AとBを含む) の整数の乱数が欲しいとき
-// 参考 http://www.sat.t.u-tokyo.ac.jp/~omi/random_variables_generation.html
-unsigned long mt_genrand_int32(int a, int b) {
-#pragma HLS INLINE
-    return genrand_int32() % (b - a + 1) + a;
-}
-
-
-#else
 // ================================ //
 // LFST
 // ================================ //
@@ -69,7 +44,6 @@ ap_uint<32> lfsr_random_uint32(ap_uint<32> a, ap_uint<32> b) {
 #pragma HLS INLINE
     return lfsr_random() % (b - a + 1) + a;
 }*/
-#endif
 
 
 // ================================ //
@@ -183,11 +157,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
     }
 
     // 乱数の初期化
-#if USE_MT
-    mt_init_genrand(12345);
-#else
     //lfsr_random_init(12345);
-#endif
 
     // 乱数テスト
     //for (int a = 0; a < 100; a++)

@@ -35,10 +35,6 @@
 using namespace std;
 
 
-// メルセンヌ・ツイスタを使う場合
-//#define USE_MT 1
-
-
 // 各種設定値
 #define NOT_USE -1
 
