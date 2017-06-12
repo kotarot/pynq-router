@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define DEBUG_PRINT
+//#define DEBUG_PRINT
 
 #endif
 
@@ -54,27 +54,19 @@ using namespace std;
 #define BOARDSTR_SIZE 32768 // ボードストリングの最大文字数 (15ビットで収まる : 値はとりあえず)
 
 #define MAX_PQ 512          // 探索時のプライオリティ・キューの最大サイズ
-#define MAX_WEIGHT 255      // 重みの最大値 (16ビットで収まる)
 
+#define MAX_WEIGHT  255      // 重みの最大値 (16ビットで収まる)
+#define COST_WEIGHT 4        // 重みの更新値
 
-#ifdef USE_MT
-// メルセンヌ・ツイスタ
-void mt_init_genrand(unsigned long s);
-unsigned long mt_genrand_int32(int a, int b);
-#else
 //void lfsr_random_init(ap_uint<32> seed);
 //ap_uint<32> lfsr_random();
 //ap_uint<32> lfsr_random_uint32(ap_uint<32> a, ap_uint<32> b);
-#endif
 
 bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status);
-//void initialize(char boardstr[BOARDSTR_SIZE], Board *board);
-//bool isFinished(Board *board);
-//void solution(char boardstr[BOARDSTR_SIZE], ap_uint<8> line_num, ap_uint<17> starts[MAX_LINE]);
+ap_uint<8> new_weight(ap_uint<8> x);
 
 void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start, ap_uint<17> goal, ap_uint<8> w[MAX_WEIGHT]);
-
-void pq_push(ap_uint<8> priority, ap_uint<17> data, ap_uint<16> *pq_len, ap_uint<16> *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]);
-void pq_pop(ap_uint<8> *ret_priority, ap_uint<17> *ret_data, ap_uint<16> *pq_len, ap_uint<16> *pq_size, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]);
+void pq_push(ap_uint<8> priority, ap_uint<17> data, ap_uint<16> *pq_len, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]);
+void pq_pop(ap_uint<8> *ret_priority, ap_uint<17> *ret_data, ap_uint<16> *pq_len, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]);
 
 #endif /* __MAIN_HPP__ */
