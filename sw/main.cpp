@@ -159,12 +159,6 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
     // 乱数の初期化
     //lfsr_random_init(12345);
 
-    // 乱数テスト
-    //for (int a = 0; a < 100; a++)
-    //    cout << static_cast<std::bitset<32> >(lfsr_random()) << endl;
-    //for (int a = 0; a < 100; a++)
-    //    cout << lfsr_random_uint32(10, 100) << endl;
-
     // ================================
     // 初期化 END
     // ================================
@@ -304,24 +298,6 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<7> size_x
     int pq_size = 0;
     ap_uint<8> pq_nodes_priority[MAX_PQ];
     ap_uint<17> pq_nodes_data[MAX_PQ];
-
-    // プライオリティ・キューのテスト
-    //pq_push(10, 1, &pq_len, &pq_size, pq_nodes_priority, pq_nodes_data);
-    //pq_push(50, 2, &pq_len, &pq_size, pq_nodes_priority, pq_nodes_data);
-    //pq_push(20, 3, &pq_len, &pq_size, pq_nodes_priority, pq_nodes_data);
-    //pq_push(40, 4, &pq_len, &pq_size, pq_nodes_priority, pq_nodes_data);
-    //pq_push(30, 5, &pq_len, &pq_size, pq_nodes_priority, pq_nodes_data);
-    //cout << "p " << pq_pop(&pq_len, &pq_size, pq_nodes_priority, pq_nodes_data) << " " << pq_len << " " << pq_size << endl;
-    //cout << "p " << pq_pop(&pq_len, &pq_size, pq_nodes_priority, pq_nodes_data) << " " << pq_len << " " << pq_size << endl;
-    //cout << "p " << pq_pop(&pq_len, &pq_size, pq_nodes_priority, pq_nodes_data) << " " << pq_len << " " << pq_size << endl;
-    //pq_push(5,   101, &pq_len, &pq_size, pq_nodes_priority, pq_nodes_data);
-    //pq_push(100, 102, &pq_len, &pq_size, pq_nodes_priority, pq_nodes_data);
-    //cout << "p " << pq_pop(&pq_len, &pq_size, pq_nodes_priority, pq_nodes_data) << " " << pq_len << " " << pq_size << endl;
-    //cout << "p " << pq_pop(&pq_len, &pq_size, pq_nodes_priority, pq_nodes_data) << " " << pq_len << " " << pq_size << endl;
-    //cout << "p " << pq_pop(&pq_len, &pq_size, pq_nodes_priority, pq_nodes_data) << " " << pq_len << " " << pq_size << endl;
-    //cout << "p " << pq_pop(&pq_len, &pq_size, pq_nodes_priority, pq_nodes_data) << " " << pq_len << " " << pq_size << endl;
-    //cout << pq_len << endl;
-    //cout << "p " << pq_pop(&pq_len, &pq_size, pq_nodes_priority, pq_nodes_data) << " " << pq_len << " " << pq_size << endl;
 
     dist[start] = 0;
     pq_push(0, start, &pq_len, &pq_size, pq_nodes_priority, pq_nodes_data); // 始点をpush
