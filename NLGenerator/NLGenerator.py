@@ -146,7 +146,7 @@ class MAP:
         for i in range(100):
             self.addLine()
         #for i in range(self.n_line):
-       #     self.optLine(i)
+        #    self.optLine(i)
 
 
 m=MAP(32,32,4)
