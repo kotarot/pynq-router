@@ -2,9 +2,10 @@
 # -*- coding: utf-8 -*-
 
 
+import argparse
+import heapq
 import numpy as np
 import random
-import heapq
 
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -146,17 +147,29 @@ class MAP:
                     i
 
 
-    def generate(self):
-        for i in range(100):
+    def generate(self, linenum):
+        for i in range(linenum):
             self.addLine()
         #for i in range(self.n_line):
         #    self.optLine(i)
 
 
-m=MAP(32,32,4)
-m.generate()
+if __name__ == '__main__':
 
-m.printQ()
-m.printA()
-#m.show()
+    parser = argparse.ArgumentParser(description='NLGenerator')
+    parser.add_argument('--x', '-x', default=32, type=int,
+                        help='X size')
+    parser.add_argument('--y', '-y', default=32, type=int,
+                        help='Y size')
+    parser.add_argument('--z', '-z', default=4, type=int,
+                        help='Z size')
+    parser.add_argument('--linenum', '-l', default=100, type=int,
+                        help='Maximum number of lines')
+    args = parser.parse_args()
 
+    m=MAP(args.x, args.y, args.z)
+    m.generate(args.linenum)
+
+    m.printQ()
+    m.printA()
+    #m.show()
