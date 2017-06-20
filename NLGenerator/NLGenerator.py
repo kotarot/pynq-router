@@ -171,5 +171,5 @@ if __name__ == '__main__':
     m.generate(args.linenum)
 
     m.printQ()
-    m.printA()
+    #m.printA()
     #m.show()
