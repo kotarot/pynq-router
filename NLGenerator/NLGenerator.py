@@ -133,7 +133,7 @@ class MAP:
         q=[]
 
         heapq.heappush(q, (0, self.line[i][0], [0,0,0]))
-         
+
         while True:
             if q == []:
                 break
