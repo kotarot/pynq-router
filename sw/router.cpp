@@ -1,5 +1,5 @@
 /**
- * main.cpp
+ * router.cpp
  *
  * for Vivado HLS
  */
@@ -10,7 +10,7 @@
 #include <ap_int.h>
 #endif
 
-#include "./main.hpp"
+#include "./router.hpp"
 
 
 // ================================ //

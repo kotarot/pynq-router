@@ -1,11 +1,11 @@
 /**
- * main.hpp
+ * router.hpp
  *
  * for Vivado HLS
  */
 
-#ifndef __MAIN_HPP__
-#define __MAIN_HPP__
+#ifndef __ROUTER_HPP__
+#define __ROUTER_HPP__
 
 #ifdef SOFTWARE
 #include "ap_int.h"
@@ -59,4 +59,4 @@ void pq_pop(ap_uint<8> *ret_priority, ap_uint<17> *ret_data, ap_uint<16> *pq_len
 void show_board(ap_uint<7> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<17> paths[MAX_LINES][MAX_PATH], ap_uint<17> starts[MAX_LINES], ap_uint<17> goals[MAX_LINES]);
 #endif
 
-#endif /* __MAIN_HPP__ */
+#endif /* __ROUTER_HPP__ */
