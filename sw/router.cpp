@@ -322,7 +322,7 @@ if (round % 100 == 0) {
     return true;
 }
 
-ap_uint<8> new_weight(ap_uint<8> x) {
+/*ap_uint<8> new_weight(ap_uint<8> x) {
 #pragma HLS INLINE
     ap_uint<8> ret = 1;
     for (ap_uint<9> i = 0; i < x; i++) {
@@ -330,7 +330,7 @@ ap_uint<8> new_weight(ap_uint<8> x) {
         ret *= COST_WEIGHT;
     }
     return ret;
-}
+}*/
 
 
 // ================================ //
