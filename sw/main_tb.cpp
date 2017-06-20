@@ -39,9 +39,9 @@ int main() {
     ap_int<8> status;
     bool result = pynqrouter(boardstr, &status);
     if (result) {
-        cout << "Test Passed!" << endl;
+        cout << endl << "Test Passed!" << endl;
     } else {
-        cout << "Test Failed!" << endl;
+        cout << endl << "Test Failed!" << endl;
     }
     cout << "status = " << status << endl << endl;
 

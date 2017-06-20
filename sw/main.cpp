@@ -18,7 +18,7 @@
 // ================================ //
 
 // 参考 https://highlevel-synthesis.com/2017/02/10/lfsr-in-hls/
-/*static ap_uint<32> lfsr;
+static ap_uint<32> lfsr;
 
 void lfsr_random_init(ap_uint<32> seed) {
 #pragma HLS INLINE
@@ -43,7 +43,7 @@ ap_uint<32> lfsr_random() {
 ap_uint<32> lfsr_random_uint32(ap_uint<32> a, ap_uint<32> b) {
 #pragma HLS INLINE
     return lfsr_random() % (b - a + 1) + a;
-}*/
+}
 
 
 // ================================ //
@@ -157,7 +157,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
     }
 
     // 乱数の初期化
-    //lfsr_random_init(12345);
+    lfsr_random_init(12345);
 
     // ================================
     // 初期化 END
@@ -168,43 +168,83 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
     // ================================
 
     bool has_overlap = false;
-    ap_uint<8> overlaps[MAX_CELLS];
+    //ap_uint<8> overlaps[MAX_CELLS];
+    ap_uint<1> overlap_checks[MAX_CELLS];
 
-    // ルーティングイテレーション (ラウンドと呼ぶ)
-    for (ap_uint<8> round = 0; round < 100; round++) {
-#pragma HLS LOOP_TRIPCOUNT min=1 max=100 avg=50
-
-//#ifdef DEBUG_PRINT
-                cout << "ROUND " << (round + 1) << endl;
-//#endif
-
-        // 初期・再ルーティング
-        for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
+    // 初期ルーティング
+    for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 //#pragma HLS UNROLL
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
 
-            // 数字が隣接する場合スキップ、そうでない場合は実行
-            if (adjacents[i] == false) {
+        // 数字が隣接する場合スキップ、そうでない場合は実行
+        if (adjacents[i] == false) {
 
-                // ダイクストラ法
+            // ダイクストラ法
 #ifdef DEBUG_PRINT
-                cout << "LINE #" << (i + 1) << endl;
+            cout << "LINE #" << (i + 1) << endl;
 #endif
-                search(&(paths_size[i]), paths[i], starts[i], goals[i], weights);
+            search(&(paths_size[i]), paths[i], starts[i], goals[i], weights);
 
-            }
+        }
+    }
+
+    // ルーティングイテレーション (ラウンドと呼ぶ)
+    for (ap_uint<32> round = 0; round < 1000000; round++) {
+#pragma HLS LOOP_TRIPCOUNT min=1 max=100 avg=50
+
+//#ifdef DEBUG_PRINT
+if (round % 100 == 0) {
+        cout << "ROUND " << round << endl;
+        //show_board(line_num, paths_size, paths, starts, goals);
+}
+//#endif
+
+        // 再ルーティング
+        // 対象ラインを選択
+        ap_uint<8> target = lfsr_random_uint32(0, line_num - 1);
+
+        // 数字が隣接する場合スキップ、そうでない場合は実行
+        if (adjacents[target] == true) {
+            continue;
         }
 
-        // 全ラインのルーティング後
-        // (1) オーバーラップのチェック
+        // (1) 重みをリセット
+        for (ap_uint<18> i = 0; i < (ap_uint<18>)(MAX_CELLS); i++) {
+            weights[i] = 1;
+        }
+        // (2) 重みを更新
+        for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
+#pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
+
+            weights[starts[i]] = MAX_WEIGHT;
+            weights[goals[i]]  = MAX_WEIGHT;
+
+            // 数字が隣接する場合スキップ、そうでない場合は実行
+            if (adjacents[i] == false && i != target) {
+                for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
+#pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
+                    weights[paths[i][j]] = MAX_WEIGHT;
+                }
+            }
+
+        }
+
+        // ダイクストラ法
+#ifdef DEBUG_PRINT
+        cout << "LINE #" << (target + 1) << endl;
+#endif
+        search(&(paths_size[target]), paths[target], starts[target], goals[target], weights);
+
+        // ルーティング後
+        // オーバーラップのチェック
         has_overlap = false;
         for (ap_uint<18> i = 0; i < (ap_uint<18>)(MAX_CELLS); i++) {
-            overlaps[i] = 0;
+            overlap_checks[i] = 0;
         }
         for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
-            (overlaps[starts[i]])++;
-            (overlaps[goals[i]])++;
+            overlap_checks[starts[i]] = 1;
+            overlap_checks[goals[i]] = 1;
 
             // 数字が隣接する場合スキップ、そうでない場合は実行
             if (adjacents[i] == false) {
@@ -212,27 +252,20 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
                 for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
                     ap_uint<17> cell_id = paths[i][j];
-                    if (0 < overlaps[cell_id]) {
+                    if (overlap_checks[cell_id] == 1) {
                         has_overlap = true;
+                        break;
                     }
-                    (overlaps[cell_id])++;
+                    overlap_checks[cell_id] = 1;
                 }
 
             }
 
         }
-        // (1') オーバーラップなければ探索終了
+        // オーバーラップなければ探索終了
         if (has_overlap == false) {
             break;
         }
-        // (2) 重みの更新
-        for (ap_uint<18> i = 0; i < (ap_uint<18>)(MAX_CELLS); i++) {
-            // ライン端点 (重み MAX_WEIGHT) 以外のみ更新
-            if (weights[i] != MAX_WEIGHT) {
-                weights[i] += new_weight(overlaps[i]);
-            }
-        }
-
     }
 
     // 解導出できなかった場合
@@ -395,7 +428,7 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start
         ap_uint<7> t_x =  prev[t] &  BITMASK_X;
         ap_uint<7> t_y = (prev[t] & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
         ap_uint<3> t_z = (prev[t] & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
-        cout << "  via " << "(" << t_x << ", " << t_y << ", " << t_z << ") = " << prev[t] << endl;
+        cout << "  via " << "(" << t_x << ", " << t_y << ", " << t_z << ") = " << prev[t] << " " << dist[t] << endl;
 #endif
 
         // マッピングへ記録
@@ -459,3 +492,39 @@ void pq_pop(ap_uint<8> *ret_priority, ap_uint<17> *ret_data, ap_uint<16> *pq_len
     pq_nodes_priority[i] = pq_nodes_priority[*pq_len + 1];
     pq_nodes_data[i]     = pq_nodes_data[*pq_len + 1];
 }
+
+#ifdef SOFTWARE
+void show_board(ap_uint<7> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<17> paths[MAX_LINES][MAX_PATH], ap_uint<17> starts[MAX_LINES], ap_uint<17> goals[MAX_LINES]) {
+    int boardmat[MAX_CELLS];
+
+    // 空白
+    for (int i = 0; i < MAX_CELLS; i++) {
+        boardmat[i] = 0;
+    }
+    // ライン
+    // このソルバでのラインIDを+1して表示する
+    // なぜなら空白を 0 で表すことにするからラインIDは 1 以上にしたい
+    for (int i = 0; i < (int)(line_num); i++) {
+#pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
+        boardmat[starts[i]] = (i + 1);
+        boardmat[goals[i]]  = (i + 1);
+        for (int j = 0; j < (int)(paths_size[i]); j++) {
+#pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
+            boardmat[paths[i][j]] = (i + 1);
+        }
+    }
+    for (int z = 0; z < (int)size_z; z++) {
+        cout << "LAYER " << (z + 1) << endl;
+        for (int y = 0; y < (int)size_y; y++) {
+            for (int x = 0; x < (int)size_x; x++) {
+                if (x != 0) {
+                    cout << ",";
+                }
+                int id = (int)( ((ap_uint<17>)z << (BITWIDTH_X + BITWIDTH_Y)) | ((ap_uint<17>)y << BITWIDTH_X) | (ap_uint<17>)x );
+                cout << setfill('0') << setw(2) << right << (int)(boardmat[id]);
+            }
+            cout << endl;
+        }
+    }
+}
+#endif
