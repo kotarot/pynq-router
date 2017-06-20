@@ -8,27 +8,13 @@
 #define __MAIN_HPP__
 
 #ifdef SOFTWARE
-#include <bitset>
-#include <iomanip>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-
-#include <assert.h>
-#include <getopt.h>
-#include <limits.h>
-#include <math.h>
-#include <stdlib.h>
-#include <time.h>
-
-//#define DEBUG_PRINT
-
-#endif
-
-#ifdef SOFTWARE
 #include "ap_int.h"
 #else
 #include <ap_int.h>
+#endif
+
+#ifdef SOFTWARE
+//#define DEBUG_PRINT
 #endif
 
 
