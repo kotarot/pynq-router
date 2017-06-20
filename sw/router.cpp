@@ -149,7 +149,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     }
 
     // ループカウンタは1ビット余分に用意しないと終了判定できない
-    for (ap_uint<8> i = 0; i < (ap_uint<18>)(MAX_LINES); i++) {
+    for (ap_uint<8> i = 0; i < (ap_uint<8>)(MAX_LINES); i++) {
         paths_size[i] = 0;
         // スタートとゴールの重みは最大にしておく
         weights[starts[i]] = MAX_WEIGHT;
