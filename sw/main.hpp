@@ -48,7 +48,7 @@ using namespace std;
 //ap_uint<32> lfsr_random();
 //ap_uint<32> lfsr_random_uint32(ap_uint<32> a, ap_uint<32> b);
 
-bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status);
+bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *status);
 ap_uint<8> new_weight(ap_uint<8> x);
 
 void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start, ap_uint<17> goal, ap_uint<8> w[MAX_WEIGHT]);

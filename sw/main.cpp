@@ -57,7 +57,7 @@ static ap_uint<3> size_z;       // ボードの Z サイズ
 
 static ap_uint<7> line_num = 0; // ラインの総数
 
-bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
+bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *status) {
 #pragma HLS INTERFACE s_axilite port=boardstr bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=status bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=return bundle=AXI4LS
@@ -157,7 +157,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_int<8> *status) {
     }
 
     // 乱数の初期化
-    lfsr_random_init(12345);
+    lfsr_random_init(seed);
 
     // ================================
     // 初期化 END

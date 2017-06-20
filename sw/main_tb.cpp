@@ -51,13 +51,19 @@ int main(int argc, char *argv[]) {
         strcpy(boardstr, argv[1]);
     }
 
+    // 指定されてればシード値を読み込む
+    int seed = 12345;
+    if (2 < argc) {
+        seed = atoi(argv[2]);
+    }
+
     int size_x = (boardstr[1] - '0') * 10 + (boardstr[2] - '0');
     int size_y = (boardstr[4] - '0') * 10 + (boardstr[5] - '0');
     int size_z = (boardstr[7] - '0');
 
     // ソルバ実行
     ap_int<8> status;
-    bool result = pynqrouter(boardstr, &status);
+    bool result = pynqrouter(boardstr, seed, &status);
     if (result) {
         cout << endl << "Test Passed!" << endl;
     } else {
