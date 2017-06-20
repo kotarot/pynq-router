@@ -1,5 +1,5 @@
 /**
- * main_tb.cpp
+ * main.cpp
  *
  * for Vivado HLS
  */
