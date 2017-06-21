@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-
 import argparse
 import heapq
 import numpy as np
@@ -45,33 +44,50 @@ class MAP:
         ax.plot(xp,yp,zp, "o-", color="#aaffee", ms=4, mew=0.5)
         plt.show()
 
+    def print(self):
+        print(self.strQ())
+        print(self.strA())
 
-    def printQ(self):
-        print("SIZE %dX%dX%d" % (self.X, self.Y, self.Z))
-        print("LINE_NUM %d" % (self.n_line))
-        print()
+    def strQ(self):
+        str=[]
+        str.append("SIZE %dX%dX%d\n" % (self.X, self.Y, self.Z))
+        str.append("LINE_NUM %d\n\n" % (self.n_line))
         for i,line in enumerate(self.line):
-            print("LINE#%d (%d,%d,%d) (%d,%d,%d)" % (i+1, line[0][0], line[0][1], line[0][2]+1, line[1][0], line[1][1], line[1][2]+1))
+            str.append("LINE#%d (%d,%d,%d) (%d,%d,%d)\n" % (i+1, line[0][0], line[0][1], line[0][2]+1, line[1][0], line[1][1], line[1][2]+1))
+        return "".join(str)
 
-    def printA(self):
-        print("SIZE %dX%dX%d" % (self.X, self.Y, self.Z))
+    def strA(self):
+        str=[]
+        str.append("SIZE %dX%dX%d\n" % (self.X, self.Y, self.Z))
         for zm in range(self.Z):
             z=zm+1
-            print("LAYER %d" % (z))
+            str.append("LAYER %d\n" % (z))
             for y in range(self.Y):
                 for x in range(self.X-1):
-                    print("%d," % self.map[x][y][zm], end="")
-                print("%d" % self.map[self.X-1][y][zm])
+                    str.append("%d," % self.map[x][y][zm])
+                str.append("%d\n" % self.map[self.X-1][y][zm])
+        return "".join(str)
 
+    def saveQ(self):
+        filename="Q-"+self.name+".txt"
+        f=open(filename, 'w')
+        f.write(self.strQ())
+        f.close()
 
+    def saveA(self):
+        filename="A-"+self.name+".txt"
+        f=open(filename, 'w')
+        f.write(self.strA())
+        f.close()
 
     def isregular(self, points):
-        a=np.dot(points<0, np.array([True, True, True]))
-        b=np.dot(points>=self.X, np.array([True, False, False])) 
-        c=np.dot(points>=self.Y, np.array([False, True, False])) 
-        d=np.dot(points>=self.Z, np.array([False, False, True])) 
-        e=np.logical_or(np.logical_or(a,b),np.logical_or(c,d))
-        return points[e==False]
+        a=np.all(points>=0,axis=1)
+        b=points[:,0]<self.X#0-col vector
+        c=points[:,1]<self.Y#1-col vector
+        d=points[:,2]<self.Z#2-col vector
+
+        e=a*b*c*d
+        return points[e]
 
     def isblank(self, points):
         l=np.array([],dtype=bool)
@@ -111,8 +127,10 @@ class MAP:
         point = start[0]
         self.map[tuple(point)]=self.n_line
         for i in range(10):
+            #self.print()
             points = self.neighbour(point)
             points = self.isregular(points)
+            points = self.isblank(points)
             points = self.istip(points)
             if len(points)==0:
                 break
@@ -170,6 +188,8 @@ if __name__ == '__main__':
     m=MAP(args.x, args.y, args.z)
     m.generate(args.linenum)
 
-    m.printQ()
-    #m.printA()
+    m.print() 
+    #m.saveQ()
+    #m.saveA()
     #m.show()
+
