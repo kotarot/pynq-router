@@ -7,12 +7,27 @@
 
 バージョンは我々が使用しているものなので、もっと古くても動くかもしれない。
 
-* TODO
+* Python 3.6.1
+* numpy 1.13.0 (for NLGenerator)
+* matplotlib 2.0.2 (for NLGenerator)
 
 
 ## Usage
 
-TODO
+ランダム問題生成
+
+```
+cd NLGenerator
+python NLGenerator -x 10 -y 10 -z 4 -l 20
+```
+
+ソフトウェアバージョン
+
+```
+cd sw
+make (or make -f Makefile.cygwin)
+./sim
+```
 
 
 ## Publications
