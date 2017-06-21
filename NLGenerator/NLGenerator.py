@@ -23,29 +23,47 @@ class MAP:
         self.line=np.zeros((0,2,3))
 
     def show(self):
-        #x = np.arange(-5,5,0.05)
-        x = np.arange(0,self.X,0.05)
-        y = np.arange(0,self.Y,0.05)
-        X, Y = np.meshgrid(x, y)
-        #Z = X*X+Y*Y
-
-        def func(X, Y):
-            return X*X+Y*Y
-
-        Z=func(X,Y)
-        xp=x
-        yp=y
-        zp=func(xp,yp)
-
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        #ax.plot_surface(X,Y,Z,cmap=cm.coolwarm)
-        #plt.plot([0,4],[2,3],[1,2])
-        ax.plot(xp,yp,zp, "o-", color="#aaffee", ms=4, mew=0.5)
+        colors=["#aa0000", "#00aa00", "#0000aa", "#aaaa00", "#aa00aa", "#00aaaa", "#aaffaa", "#555500", "#550055", "#005555"]
+        for i in range(1,self.n_line):
+            x,y,z=np.where(self.map==i)
+            x,y,z=self.sortline(self.line[i-1][0],self.line[i-1][1],x,y,z)
+            ax.plot(x,y,z, "-", color=colors[i%len(colors)], ms=4, mew=0.5)
+            x=[x[0],x[len(x)-1]]
+            y=[y[0],y[len(y)-1]]
+            z=[z[0],z[len(z)-1]]
+            ax.plot(x,y,z, "o", color=colors[i%len(colors)], ms=4, mew=0.5)
         plt.show()
 
+    def sortline(self, start, end, x, y, z):
+        length=len(x)
+        lines=np.append(np.append(x,y),z).reshape((3,length))
+        lines=lines.T
+        for i in range(1,length):
+            if np.equal(start,lines[i]).all():
+                lines[0],lines[i]=np.copy(lines[i]),np.copy(lines[0])
+                break
+
+        for i in range(0,len(x)-1):
+            if np.linalg.norm(lines[i]-lines[i+1])==1:continue
+            for j in range(i+2,len(x)):
+                if np.linalg.norm(lines[i]-lines[j])==1:
+                    lines[j],lines[i+1]=np.copy(lines[i+1]),np.copy(lines[j])
+                    break
+
+        lines=lines.T
+        x,y,z=lines[0],lines[1],lines[2]
+        return x,y,z
+
     def print(self):
+        self.printQ()
+        self.printA()
+
+    def printQ(self):
         print(self.strQ())
+
+    def printA(self):
         print(self.strA())
 
     def strQ(self):
@@ -67,6 +85,10 @@ class MAP:
                     str.append("%d," % self.map[x][y][zm])
                 str.append("%d\n" % self.map[self.X-1][y][zm])
         return "".join(str)
+
+    def save(self):
+        self.saveQ()
+        self.saveA()
 
     def saveQ(self):
         filename="Q-"+self.name+".txt"
@@ -119,15 +141,17 @@ class MAP:
         return nlist
 
     def addLine(self):
-        start=np.array([[random.randrange(self.X), random.randrange(self.Y), random.randrange(self.Z)]])
-        #start=np.array([[0,0,-1], [0,0,1], [0,-1,0], [0,1,0], [-1,0,0], [1,0,0]])
-        if len(self.isblank(start))==0:
-            return
+        MAXLOOP=1000
+        MAXLENGTH=10
+        for i in range(MAXLOOP):
+            start=np.array([[random.randrange(self.X), random.randrange(self.Y), random.randrange(self.Z)]])
+            if len(self.isblank(start))!=0:break
+        else:
+            return False
         self.n_line=self.n_line+1
         point = start[0]
         self.map[tuple(point)]=self.n_line
-        for i in range(10):
-            #self.print()
+        for i in range(MAXLENGTH):
             points = self.neighbour(point)
             points = self.isregular(points)
             points = self.isblank(points)
@@ -139,10 +163,11 @@ class MAP:
 
         end=point
         if np.array_equal(start[0],end):
-            self.map[self.map==self.n_line]=0
+            self.map[tuple(end)]=0
             self.n_line=self.n_line-1
-            return
+            return False
         self.line=np.append(self.line, [[start[0], end]], axis=0)
+        return True
 
     def optLine(self, n_line):
         MAX=72*72*8
@@ -188,7 +213,7 @@ if __name__ == '__main__':
     m=MAP(args.x, args.y, args.z)
     m.generate(args.linenum)
 
-    m.print() 
+    m.show() 
     #m.saveQ()
     #m.saveA()
     #m.show()
