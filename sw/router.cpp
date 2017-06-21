@@ -50,6 +50,11 @@ ap_uint<32> lfsr_random_uint32(ap_uint<32> a, ap_uint<32> b) {
 // メインモジュール
 // ================================ //
 
+ap_uint<8> max_uint8(ap_uint<8> a, ap_uint<8> b) {
+    if (a < b) { return b; }
+    else { return a; }
+}
+
 // ボードに関する変数
 static ap_uint<7> size_x;       // ボードの X サイズ
 static ap_uint<7> size_y;       // ボードの Y サイズ
@@ -152,8 +157,8 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(MAX_LINES); i++) {
         paths_size[i] = 0;
         // スタートとゴールの重みは最大にしておく
-        weights[starts[i]] = MAX_WEIGHT;
-        weights[goals[i]]  = MAX_WEIGHT;
+        //weights[starts[i]] = MAX_WEIGHT;
+        //weights[goals[i]]  = MAX_WEIGHT;
     }
 
     // 乱数の初期化
@@ -189,14 +194,14 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     }
 
     // ルーティングイテレーション (ラウンドと呼ぶ)
-    for (ap_uint<32> round = 0; round < 1000000; round++) {
+    for (ap_uint<8> round = 1; round <= 255; round++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=100 avg=50
 
 //#ifdef DEBUG_PRINT
-if (round % 100 == 0) {
+//if (round % 100 == 0) {
         cout << "ROUND " << round << endl;
         //show_board(line_num, paths_size, paths, starts, goals);
-}
+//}
 //#endif
 
         // 再ルーティング
@@ -216,14 +221,15 @@ if (round % 100 == 0) {
         for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
 
-            weights[starts[i]] = MAX_WEIGHT;
-            weights[goals[i]]  = MAX_WEIGHT;
+            ap_uint<8> current_round_weight = max_uint8(round, MAX_WEIGHT);
+            weights[starts[i]] = current_round_weight;
+            weights[goals[i]]  = current_round_weight;
 
             // 数字が隣接する場合スキップ、そうでない場合は実行
             if (adjacents[i] == false && i != target) {
                 for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
-                    weights[paths[i][j]] = MAX_WEIGHT;
+                    weights[paths[i][j]] = current_round_weight;
                 }
             }
 
