@@ -33,7 +33,7 @@ class MAP:
             x=[x[0],x[len(x)-1]]
             y=[y[0],y[len(y)-1]]
             z=[z[0],z[len(z)-1]]
-            ax.plot(x,y,z, "o", color=colors[i%len(colors)], ms=4, mew=0.5)
+            ax.scatter(x,y,z,s=50,c=colors[i%len(colors)])
         plt.show()
 
     def sortline(self, start, end, x, y, z):
@@ -191,6 +191,7 @@ class MAP:
 
 
     def generate(self, linenum):
+        self.name="".join([self.name,"-%d" % (linenum)])
         for i in range(linenum):
             self.addLine()
         #for i in range(self.n_line):
@@ -213,7 +214,7 @@ if __name__ == '__main__':
     m=MAP(args.x, args.y, args.z)
     m.generate(args.linenum)
 
-    m.show() 
+    m.save() 
     #m.saveQ()
     #m.saveA()
     #m.show()
