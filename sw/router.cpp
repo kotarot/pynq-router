@@ -138,11 +138,10 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
             goals[line_num]  = (((ap_uint<16>)g_x * MAX_WIDTH + (ap_uint<16>)g_y) << BITWIDTH_Z) | (ap_uint<16>)g_z;
 
             // 初期状態で数字が隣接しているか判断
-            ap_int<9> dx = (ap_int<8>)g_x - (ap_int<8>)s_x; // 最小-71 最大71 (-> 符号付き8ビット)
-            ap_int<9> dy = (ap_int<8>)g_y - (ap_int<8>)s_y; // 最小-71 最大71 (-> 符号付き8ビット)
+            ap_int<8> dx = (ap_int<8>)g_x - (ap_int<8>)s_x; // 最小-71 最大71 (-> 符号付き8ビット)
+            ap_int<8> dy = (ap_int<8>)g_y - (ap_int<8>)s_y; // 最小-71 最大71 (-> 符号付き8ビット)
             ap_int<4> dz = (ap_int<4>)g_z - (ap_int<4>)s_z; // 最小-7  最大7  (-> 符号付き4ビット)
-            if ((dx == 0 && dy == 0 && (dz == 1 || dz == -1)) || (dx == 0 && (dy == 1 || dy == -1) && dz == 0) ||
-                ((dx == 1 || dx == -1) && dy == 0 && dz == 0)) {
+            if ((dx == 0 && dy == 0 && (dz == 1 || dz == -1)) || (dx == 0 && (dy == 1 || dy == -1) && dz == 0) || ((dx == 1 || dx == -1) && dy == 0 && dz == 0)) {
                 adjacents[line_num] = true;
             } else {
                 adjacents[line_num] = false;
@@ -402,12 +401,9 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
                 if (0 <= dest_x && dest_x < (ap_int<8>)size_x && 0 <= dest_y && dest_y < (ap_int<8>)size_y && 0 <= dest_z && dest_z < (ap_int<5>)size_z) {
                     ap_uint<16> dest = (((ap_uint<16>)dest_x * MAX_WIDTH + (ap_uint<16>)dest_y) << BITWIDTH_Z) | (ap_uint<16>)dest_z;
                     if (dist[dest] > dist[src] + cost) {
-                        dist[dest] = dist[src] + cost;
-                            // distの更新
-                        pq_push(dist[dest], dest, &pq_len, pq_nodes_priority, pq_nodes_data);
-                            // キューに新たな仮の距離の情報をpush
-                        prev[dest] = src;
-                            // 前の頂点を記録
+                        dist[dest] = dist[src] + cost; // distの更新
+                        pq_push(dist[dest], dest, &pq_len, pq_nodes_priority, pq_nodes_data); // キューに新たな仮の距離の情報をpush
+                        prev[dest] = src; // 前の頂点を記録
                     }
                 }
              }
