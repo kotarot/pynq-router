@@ -59,9 +59,9 @@ ap_uint<32> lfsr_random() {
 
 // 重みの更新
 // min_uint8(r, MAX_WEIGHT) と同じ
-ap_uint<8> new_weight(ap_uint<8> x) {
+ap_uint<8> new_weight(ap_uint<16> x) {
 #pragma HLS INLINE
-    if (x < MAX_WEIGHT) { return x; }
+    if (x < (ap_uint<16>)MAX_WEIGHT) { return x; }
     else { return MAX_WEIGHT; }
 }
 
@@ -167,8 +167,8 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(MAX_LINES); i++) {
         paths_size[i] = 0;
         // スタートとゴールの重みは最大にしておく
-        //weights[starts[i]] = MAX_WEIGHT;
-        //weights[goals[i]]  = MAX_WEIGHT;
+        weights[starts[i]] = MAX_WEIGHT;
+        weights[goals[i]]  = MAX_WEIGHT;
     }
 
     // 乱数の初期化
@@ -186,7 +186,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     //ap_uint<8> overlaps[MAX_CELLS];
     ap_uint<1> overlap_checks[MAX_CELLS];
 
-    // 初期ルーティング
+    // [Step 1] 初期ルーティング
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 //#pragma HLS UNROLL
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
@@ -196,16 +196,16 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
             // ダイクストラ法
 #ifdef DEBUG_PRINT
-            cout << "LINE #" << (i + 1) << endl;
+            cout << "LINE #" << (int)(i + 1) << endl;
 #endif
             search(&(paths_size[i]), paths[i], starts[i], goals[i], weights);
 
         }
     }
 
-    // ルーティングイテレーション (ラウンドと呼ぶ)
-    for (ap_uint<8> round = 1; round <= 255; round++) {
-#pragma HLS LOOP_TRIPCOUNT min=1 max=100 avg=50
+    // [Step 2] Rip-up 再ルーティング
+    for (ap_uint<16> round = 0; round < 4000; round++) {
+#pragma HLS LOOP_TRIPCOUNT min=1 max=4000 avg=50
 
 //#ifdef DEBUG_PRINT
 //if (round % 100 == 0) {
@@ -214,7 +214,6 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 //}
 //#endif
 
-        // 再ルーティング
         // 対象ラインを選択
         //ap_uint<8> target = lfsr_random_uint32(0, line_num - 1);
         //ap_uint<8> target = lfsr_random_uint32_0(line_num - 1);
@@ -225,17 +224,17 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
             continue;
         }
 
-        // (1) 重みをリセット
-        for (ap_uint<18> i = 0; i < (ap_uint<18>)(MAX_CELLS); i++) {
-            weights[i] = 1;
+        // (1) 引きはがすラインの重みをリセット
+        for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[target]); j++) {
+            weights[paths[target][j]] = 1;
         }
+        // 対象ラインのスタートの重みも一旦リセット あとで (*) で戻す
+        weights[starts[target]] = 1;
+
         // (2) 重みを更新
+        ap_uint<8> current_round_weight = new_weight(round);
         for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
-
-            ap_uint<8> current_round_weight = new_weight(round);
-            weights[starts[i]] = current_round_weight;
-            weights[goals[i]]  = current_round_weight;
 
             // 数字が隣接する場合スキップ、そうでない場合は実行
             if (adjacents[i] == false && i != target) {
@@ -249,9 +248,12 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
         // ダイクストラ法
 #ifdef DEBUG_PRINT
-        cout << "LINE #" << (target + 1) << endl;
+        cout << "LINE #" << (int)(target + 1) << endl;
 #endif
         search(&(paths_size[target]), paths[target], starts[target], goals[target], weights);
+
+        // (*) 対象ラインのスタートの重みを戻す
+        weights[starts[target]] = MAX_WEIGHT;
 
         // ルーティング後
         // オーバーラップのチェック
@@ -278,12 +280,12 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
                 }
 
             }
-
         }
         // オーバーラップなければ探索終了
         if (has_overlap == false) {
             break;
         }
+
     }
 
     // 解導出できなかった場合
@@ -339,16 +341,6 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     *status = 0;
     return true;
 }
-
-/*ap_uint<8> new_weight(ap_uint<8> x) {
-#pragma HLS INLINE
-    ap_uint<8> ret = 1;
-    for (ap_uint<9> i = 0; i < x; i++) {
-#pragma HLS LOOP_TRIPCOUNT min=0 max=10 avg=4
-        ret *= COST_WEIGHT;
-    }
-    return ret;
-}*/
 
 
 // ================================ //
@@ -434,8 +426,8 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start
     int goal_x  =  goal  &  BITMASK_X;
     int goal_y  = (goal  & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
     int goal_z  = (goal  & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
-    cout << "(" << start_x << ", " << start_y << ", " << start_z << ") = " << start << " -> "
-         << "(" << goal_x  << ", " << goal_y  << ", " << goal_z  << ") = " << goal << endl;
+    cout << "(" << start_x << ", " << start_y << ", " << start_z << ") #" << start << " -> "
+         << "(" << goal_x  << ", " << goal_y  << ", " << goal_z  << ") #" << goal << endl;
 #endif
 
     ap_uint<8> p = 0;
@@ -446,7 +438,7 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start
         ap_uint<7> t_x =  prev[t] &  BITMASK_X;
         ap_uint<7> t_y = (prev[t] & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
         ap_uint<3> t_z = (prev[t] & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
-        cout << "  via " << "(" << t_x << ", " << t_y << ", " << t_z << ") = " << prev[t] << " " << dist[t] << endl;
+        cout << "  via " << "(" << t_x << ", " << t_y << ", " << t_z << ") #" << prev[t] << " dist=" << dist[t] << endl;
 #endif
 
         // マッピングへ記録
