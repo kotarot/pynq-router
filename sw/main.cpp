@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     } else {
         cout << endl << "Test Failed!" << endl;
     }
-    cout << "status = " << status << endl << endl;
+    cout << "status = " << (int)status << endl << endl;
 
     // ‰ð•\Ž¦
     cout << "SOLUTION" << endl;
