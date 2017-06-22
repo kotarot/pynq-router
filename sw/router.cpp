@@ -40,19 +40,29 @@ ap_uint<32> lfsr_random() {
 
 // AからBの範囲 (AとBを含む) の整数の乱数が欲しいとき
 // 参考 http://www.sat.t.u-tokyo.ac.jp/~omi/random_variables_generation.html
-ap_uint<32> lfsr_random_uint32(ap_uint<32> a, ap_uint<32> b) {
+/*ap_uint<32> lfsr_random_uint32(ap_uint<32> a, ap_uint<32> b) {
 #pragma HLS INLINE
     return lfsr_random() % (b - a + 1) + a;
-}
+}*/
+
+// 0からBの範囲 (AとBを含む) の整数の乱数が欲しいとき
+// 参考 http://www.sat.t.u-tokyo.ac.jp/~omi/random_variables_generation.html
+/*ap_uint<32> lfsr_random_uint32_0(ap_uint<32> b) {
+#pragma HLS INLINE
+    return lfsr_random() % (b + 1);
+}*/
 
 
 // ================================ //
 // メインモジュール
 // ================================ //
 
-ap_uint<8> max_uint8(ap_uint<8> a, ap_uint<8> b) {
-    if (a < b) { return b; }
-    else { return a; }
+// 重みの更新
+// min_uint8(r, MAX_WEIGHT) と同じ
+ap_uint<8> new_weight(ap_uint<8> x) {
+#pragma HLS INLINE
+    if (x < MAX_WEIGHT) { return x; }
+    else { return MAX_WEIGHT; }
 }
 
 // ボードに関する変数
@@ -206,7 +216,9 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
         // 再ルーティング
         // 対象ラインを選択
-        ap_uint<8> target = lfsr_random_uint32(0, line_num - 1);
+        //ap_uint<8> target = lfsr_random_uint32(0, line_num - 1);
+        //ap_uint<8> target = lfsr_random_uint32_0(line_num - 1);
+        ap_uint<8> target = lfsr_random() % line_num;
 
         // 数字が隣接する場合スキップ、そうでない場合は実行
         if (adjacents[target] == true) {
@@ -221,7 +233,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
 
-            ap_uint<8> current_round_weight = max_uint8(round, MAX_WEIGHT);
+            ap_uint<8> current_round_weight = new_weight(round);
             weights[starts[i]] = current_round_weight;
             weights[goals[i]]  = current_round_weight;
 

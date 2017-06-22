@@ -44,12 +44,13 @@ using namespace std;
 #define MAX_WEIGHT  255      // 重みの最大値 (8ビットで収まる)
 #define COST_WEIGHT 4        // 重みの更新値
 
-//void lfsr_random_init(ap_uint<32> seed);
-//ap_uint<32> lfsr_random();
+void lfsr_random_init(ap_uint<32> seed);
+ap_uint<32> lfsr_random();
 //ap_uint<32> lfsr_random_uint32(ap_uint<32> a, ap_uint<32> b);
+//ap_uint<32> lfsr_random_uint32_0(ap_uint<32> b);
 
+ap_uint<8> new_weight(ap_uint<8> x);
 bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *status);
-//ap_uint<8> new_weight(ap_uint<8> x);
 
 void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start, ap_uint<17> goal, ap_uint<8> w[MAX_WEIGHT]);
 void pq_push(ap_uint<8> priority, ap_uint<17> data, ap_uint<16> *pq_len, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]);
