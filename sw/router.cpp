@@ -68,7 +68,7 @@ ap_uint<8> new_weight(ap_uint<16> x) {
 // ボードに関する変数
 static ap_uint<7> size_x;       // ボードの X サイズ
 static ap_uint<7> size_y;       // ボードの Y サイズ
-static ap_uint<3> size_z;       // ボードの Z サイズ
+static ap_uint<4> size_z;       // ボードの Z サイズ
 
 static ap_uint<7> line_num = 0; // ラインの総数
 
@@ -79,15 +79,15 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
     *status = -127;
 
-    ap_uint<17> starts[MAX_LINES];          // ラインのスタートリスト
+    ap_uint<16> starts[MAX_LINES];          // ラインのスタートリスト
 //#pragma HLS ARRAY_PARTITION variable=starts complete dim=0
-    ap_uint<17> goals[MAX_LINES];           // ラインのゴールリスト
+    ap_uint<16> goals[MAX_LINES];           // ラインのゴールリスト
 //#pragma HLS ARRAY_PARTITION variable=goals complete dim=0
 
     ap_uint<8> weights[MAX_CELLS];          // セルの重み
     ap_uint<8> paths_size[MAX_LINES];       // ラインが対応するセルIDのサイズ
 #pragma HLS ARRAY_PARTITION variable=paths_size complete dim=0
-    ap_uint<17> paths[MAX_LINES][MAX_PATH]; // ラインが対応するセルIDの集合 (スタートとゴールは除く)
+    ap_uint<16> paths[MAX_LINES][MAX_PATH]; // ラインが対応するセルIDの集合 (スタートとゴールは除く)
     bool adjacents[MAX_LINES];              // スタートとゴールが隣接しているライン
 #pragma HLS ARRAY_PARTITION variable=adjacents complete dim=0
 
@@ -134,15 +134,14 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
             idx += 11;
 
             // スタートとゴール
-            starts[line_num] = ((ap_uint<17>)s_z << (BITWIDTH_X + BITWIDTH_Y)) | ((ap_uint<17>)s_y << BITWIDTH_X) | (ap_uint<17>)s_x;
-            goals[line_num]  = ((ap_uint<17>)g_z << (BITWIDTH_X + BITWIDTH_Y)) | ((ap_uint<17>)g_y << BITWIDTH_X) | (ap_uint<17>)g_x;
+            starts[line_num] = (((ap_uint<16>)s_x * MAX_WIDTH + (ap_uint<16>)s_y) << BITWIDTH_Z) | (ap_uint<16>)s_z;
+            goals[line_num]  = (((ap_uint<16>)g_x * MAX_WIDTH + (ap_uint<16>)g_y) << BITWIDTH_Z) | (ap_uint<16>)g_z;
 
             // 初期状態で数字が隣接しているか判断
-            ap_int<8> dx = g_x - s_x;
-            ap_int<8> dy = g_y - s_y;
-            ap_int<4> dz = g_z - s_z;
-            if ((dx == 0 && dy == 0 && (dz == 1 || dz == -1)) || (dx == 0 && (dy == 1 || dy == -1) && dz == 0) ||
-                ((dx == 1 || dx == -1) && dy == 0 && dz == 0)) {
+            ap_int<8> dx = (ap_int<8>)g_x - (ap_int<8>)s_x; // 最小-71 最大71 (-> 符号付き8ビット)
+            ap_int<8> dy = (ap_int<8>)g_y - (ap_int<8>)s_y; // 最小-71 最大71 (-> 符号付き8ビット)
+            ap_int<4> dz = (ap_int<4>)g_z - (ap_int<4>)s_z; // 最小-7  最大7  (-> 符号付き4ビット)
+            if ((dx == 0 && dy == 0 && (dz == 1 || dz == -1)) || (dx == 0 && (dy == 1 || dy == -1) && dz == 0) || ((dx == 1 || dx == -1) && dy == 0 && dz == 0)) {
                 adjacents[line_num] = true;
             } else {
                 adjacents[line_num] = false;
@@ -158,13 +157,12 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     }
     //cout << size_x << " " << size_y << " " << size_z << endl;
 
-    // ループカウンタは1ビット余分に用意しないと終了判定できない
-    for (ap_uint<18> i = 0; i < (ap_uint<18>)(MAX_CELLS); i++) {
+    for (ap_uint<16> i = 0; i < (ap_uint<16>)(MAX_CELLS); i++) {
         weights[i] = 1;
     }
 
-    // ループカウンタは1ビット余分に用意しないと終了判定できない
-    for (ap_uint<8> i = 0; i < (ap_uint<8>)(MAX_LINES); i++) {
+    for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
+#pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
         paths_size[i] = 0;
         // スタートとゴールの重みは最大にしておく
         weights[starts[i]] = MAX_WEIGHT;
@@ -183,7 +181,6 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     // ================================
 
     bool has_overlap = false;
-    //ap_uint<8> overlaps[MAX_CELLS];
     ap_uint<1> overlap_checks[MAX_CELLS];
 
     // [Step 1] 初期ルーティング
@@ -204,7 +201,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     }
 
     // [Step 2] Rip-up 再ルーティング
-    for (ap_uint<16> round = 0; round < 4000; round++) {
+    for (ap_uint<16> round = 1; round <= 4000; round++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=4000 avg=50
 
 //#ifdef DEBUG_PRINT
@@ -258,7 +255,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         // ルーティング後
         // オーバーラップのチェック
         has_overlap = false;
-        for (ap_uint<18> i = 0; i < (ap_uint<18>)(MAX_CELLS); i++) {
+        for (ap_uint<16> i = 0; i < (ap_uint<16>)(MAX_CELLS); i++) {
             overlap_checks[i] = 0;
         }
         for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
@@ -271,7 +268,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
                 for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
-                    ap_uint<17> cell_id = paths[i][j];
+                    ap_uint<16> cell_id = paths[i][j];
                     if (overlap_checks[cell_id] == 1) {
                         has_overlap = true;
                         break;
@@ -303,7 +300,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     // ================================
 #ifdef SOFTWARE
     // 空白
-    for (ap_uint<18> i = 0; i < (ap_uint<18>)(MAX_CELLS); i++) {
+    for (ap_uint<16> i = 0; i < (ap_uint<16>)(MAX_CELLS); i++) {
         boardmat[i] = 0;
     }
     // ライン
@@ -320,14 +317,14 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     }
 
     // boardmat を文字列化 (ただし、表示できる文字とは限らない)
-    ap_uint<17> i = 0;
-    for (ap_uint<4> z = 0; z < (ap_uint<4>)(size_z); z++) {
+    ap_uint<16> i = 0;
+    for (ap_uint<7> x = 0; x < (ap_uint<7>)(size_x); x++) {
 #pragma HLS LOOP_TRIPCOUNT min=4 max=72 avg=20
-        for (ap_uint<8> y = 0; y < (ap_uint<8>)(size_y); y++) {
+        for (ap_uint<7> y = 0; y < (ap_uint<7>)(size_y); y++) {
 #pragma HLS LOOP_TRIPCOUNT min=4 max=72 avg=20
-            for (ap_uint<8> x = 0; x < (ap_uint<8>)(size_x); x++) {
+            for (ap_uint<4> z = 0; z < (ap_uint<4>)(size_z); z++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=4
-                ap_uint<17> cell_id = ((ap_uint<17>)z << (BITWIDTH_X + BITWIDTH_Y)) | ((ap_uint<17>)y << BITWIDTH_X) | (ap_uint<17>)x;
+                ap_uint<16> cell_id = (((ap_uint<16>)x * MAX_WIDTH + (ap_uint<16>)y) << BITWIDTH_Z) | (ap_uint<16>)z;
                 boardstr[i] = boardmat[cell_id];
                 i++;
             }
@@ -350,20 +347,20 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 // Pythonでダイクストラアルゴリズムを実装した - フツーって言うなぁ！
 // http://lethe2211.hatenablog.com/entry/2014/12/30/011030
 // をベース
-void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start, ap_uint<17> goal, ap_uint<8> w[MAX_CELLS]) {
+void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start, ap_uint<16> goal, ap_uint<8> w[MAX_CELLS]) {
 
     ap_uint<16> dist[MAX_CELLS]; // 始点から各頂点までの最短距離を格納する
-    ap_uint<17> prev[MAX_CELLS]; // 最短経路における，その頂点の前の頂点のIDを格納する
-    for (ap_uint<18> i = 0; i < MAX_CELLS; i++) {
+    ap_uint<16> prev[MAX_CELLS]; // 最短経路における，その頂点の前の頂点のIDを格納する
+    for (ap_uint<16> i = 0; i < MAX_CELLS; i++) {
         dist[i] = 65535; // = (2^16 - 1)
     }
 
     // プライオリティ・キュー
     ap_uint<16> pq_len = 0;
-    ap_uint<8> pq_nodes_priority[MAX_PQ];
+    ap_uint<16> pq_nodes_priority[MAX_PQ];
 //#pragma HLS ARRAY_PARTITION variable=pq_nodes_priority complete dim=1
 //#pragma HLS ARRAY_PARTITION variable=pq_nodes_priority cyclic factor=2 dim=1 partition
-    ap_uint<17> pq_nodes_data[MAX_PQ];
+    ap_uint<16> pq_nodes_data[MAX_PQ];
 //#pragma HLS ARRAY_PARTITION variable=pq_nodes_data complete dim=1
 //#pragma HLS ARRAY_PARTITION variable=pq_nodes_data cyclic factor=2 dim=1 partition
 
@@ -373,8 +370,8 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start
     while (0 < pq_len) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=2000 avg=1000
 
-        ap_uint<8> prov_cost;
-        ap_uint<17> src;
+        ap_uint<16> prov_cost;
+        ap_uint<16> src;
         pq_pop(&prov_cost, &src, &pq_len, pq_nodes_priority, pq_nodes_data);
 
         // プライオリティキューに格納されている最短距離が，現在計算できている最短距離より大きければ，distの更新をする必要はない
@@ -384,15 +381,16 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start
             // (0) コスト
             ap_uint<8> cost = w[src];
             // (1) ノードIDから3次元座標をマスクして抜き出す
-            ap_uint<7> src_x =  src &  BITMASK_X;
-            ap_uint<7> src_y = (src & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
-            ap_uint<3> src_z = (src & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
+            ap_uint<13> src_xy = (ap_uint<13>)((src & BITMASK_XY) >> BITWIDTH_Z);
+            ap_uint<7> src_x = (ap_uint<7>)(src_xy / MAX_WIDTH);
+            ap_uint<7> src_y = (ap_uint<7>)(src_xy % MAX_WIDTH);
+            ap_uint<3> src_z = (ap_uint<3>)(src & BITMASK_Z);
             //cout << src << " " << src_x << " " << src_y << " " << src_z << endl;
             // (2) 3次元座標で隣接するノード (6個) を調べる
             for (ap_uint<3> a = 0; a < 6; a++) {
-                ap_int<9> dest_x = (ap_int<9>)src_x;
-                ap_int<9> dest_y = (ap_int<9>)src_y;
-                ap_int<5> dest_z = (ap_int<9>)src_z;
+                ap_int<8> dest_x = (ap_int<8>)src_x; // 最小-1 最大72 (->符号付き8ビット)
+                ap_int<8> dest_y = (ap_int<8>)src_y; // 最小-1 最大72 (->符号付き8ビット)
+                ap_int<5> dest_z = (ap_int<5>)src_z; // 最小-1 最大8  (->符号付き5ビット)
                 if (a == 0) { dest_x -= 1; }
                 if (a == 1) { dest_x += 1; }
                 if (a == 2) { dest_y -= 1; }
@@ -400,15 +398,12 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start
                 if (a == 4) { dest_z -= 1; }
                 if (a == 5) { dest_z += 1; }
 
-                if (0 <= dest_x && dest_x < (ap_int<9>)size_x && 0 <= dest_y && dest_y < (ap_int<9>)size_y && 0 <= dest_z && dest_z < (ap_int<5>)size_z) {
-                    ap_uint<17> dest = ((ap_uint<17>)dest_z << (BITWIDTH_X + BITWIDTH_Y)) | ((ap_uint<17>)dest_y << BITWIDTH_X) | (ap_uint<17>)dest_x;
+                if (0 <= dest_x && dest_x < (ap_int<8>)size_x && 0 <= dest_y && dest_y < (ap_int<8>)size_y && 0 <= dest_z && dest_z < (ap_int<5>)size_z) {
+                    ap_uint<16> dest = (((ap_uint<16>)dest_x * MAX_WIDTH + (ap_uint<16>)dest_y) << BITWIDTH_Z) | (ap_uint<16>)dest_z;
                     if (dist[dest] > dist[src] + cost) {
-                        dist[dest] = dist[src] + cost;
-                            // distの更新
-                        pq_push(dist[dest], dest, &pq_len, pq_nodes_priority, pq_nodes_data);
-                            // キューに新たな仮の距離の情報をpush
-                        prev[dest] = src;
-                            // 前の頂点を記録
+                        dist[dest] = dist[src] + cost; // distの更新
+                        pq_push(dist[dest], dest, &pq_len, pq_nodes_priority, pq_nodes_data); // キューに新たな仮の距離の情報をpush
+                        prev[dest] = src; // 前の頂点を記録
                     }
                 }
              }
@@ -417,15 +412,19 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start
 
     // 経路を出力
     // ゴールからスタートへの順番で表示される (ゴールとスタートは含まれない)
-    ap_uint<17> t = goal;
+    ap_uint<16> t = goal;
 
 #ifdef DEBUG_PRINT
-    int start_x =  start &  BITMASK_X;
-    int start_y = (start & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
-    int start_z = (start & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
-    int goal_x  =  goal  &  BITMASK_X;
-    int goal_y  = (goal  & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
-    int goal_z  = (goal  & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
+    int start_xy = (start & BITMASK_XY) >> BITWIDTH_Z;
+    int start_x = start_xy / MAX_WIDTH;
+    int start_y = start_xy % MAX_WIDTH;
+    int start_z = start & BITMASK_Z;
+
+    int goal_xy = (goal & BITMASK_XY) >> BITWIDTH_Z;
+    int goal_x = goal_xy / MAX_WIDTH;
+    int goal_y = goal_xy % MAX_WIDTH;
+    int goal_z = goal & BITMASK_Z;
+
     cout << "(" << start_x << ", " << start_y << ", " << start_z << ") #" << start << " -> "
          << "(" << goal_x  << ", " << goal_y  << ", " << goal_z  << ") #" << goal << endl;
 #endif
@@ -435,9 +434,11 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
 
 #ifdef DEBUG_PRINT
-        ap_uint<7> t_x =  prev[t] &  BITMASK_X;
-        ap_uint<7> t_y = (prev[t] & (BITMASK_Y << BITWIDTH_X)) >> BITWIDTH_X;
-        ap_uint<3> t_z = (prev[t] & (BITMASK_Z << (BITWIDTH_X + BITWIDTH_Y))) >> (BITWIDTH_X + BITWIDTH_Y);
+        int t_xy = (prev[t] & BITMASK_XY) >> BITWIDTH_Z;
+        int t_x = t_xy / MAX_WIDTH;
+        int t_y = t_xy % MAX_WIDTH;
+        int t_z = prev[t] & BITMASK_Z;
+
         cout << "  via " << "(" << t_x << ", " << t_y << ", " << t_z << ") #" << prev[t] << " dist=" << dist[t] << endl;
 #endif
 
@@ -452,7 +453,7 @@ void search(ap_uint<8> *path_size, ap_uint<17> path[MAX_PATH], ap_uint<17> start
 
 // プライオリティ・キュー (ヒープ)
 // 参考 https://rosettacode.org/wiki/Priority_queue#C
-void pq_push(ap_uint<8> priority, ap_uint<17> data, ap_uint<16> *pq_len, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]) {
+void pq_push(ap_uint<16> priority, ap_uint<16> data, ap_uint<16> *pq_len, ap_uint<16> pq_nodes_priority[MAX_PQ], ap_uint<16> pq_nodes_data[MAX_PQ]) {
 #pragma HLS INLINE
 
     (*pq_len)++;
@@ -471,7 +472,7 @@ void pq_push(ap_uint<8> priority, ap_uint<17> data, ap_uint<16> *pq_len, ap_uint
     pq_nodes_data[i]     = data;
 }
 
-void pq_pop(ap_uint<8> *ret_priority, ap_uint<17> *ret_data, ap_uint<16> *pq_len, ap_uint<8> pq_nodes_priority[MAX_PQ], ap_uint<17> pq_nodes_data[MAX_PQ]) {
+void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<16> *pq_len, ap_uint<16> pq_nodes_priority[MAX_PQ], ap_uint<16> pq_nodes_data[MAX_PQ]) {
 #pragma HLS INLINE
 
     *ret_priority = pq_nodes_priority[1];
@@ -504,7 +505,7 @@ void pq_pop(ap_uint<8> *ret_priority, ap_uint<17> *ret_data, ap_uint<16> *pq_len
 }
 
 #ifdef SOFTWARE
-void show_board(ap_uint<7> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<17> paths[MAX_LINES][MAX_PATH], ap_uint<17> starts[MAX_LINES], ap_uint<17> goals[MAX_LINES]) {
+void show_board(ap_uint<7> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<16> paths[MAX_LINES][MAX_PATH], ap_uint<16> starts[MAX_LINES], ap_uint<16> goals[MAX_LINES]) {
     int boardmat[MAX_CELLS];
 
     // 空白
@@ -530,7 +531,7 @@ void show_board(ap_uint<7> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<1
                 if (x != 0) {
                     cout << ",";
                 }
-                int id = (int)( ((ap_uint<17>)z << (BITWIDTH_X + BITWIDTH_Y)) | ((ap_uint<17>)y << BITWIDTH_X) | (ap_uint<17>)x );
+                int id = (int)( (((ap_uint<16>)x * MAX_WIDTH + (ap_uint<16>)y) << BITWIDTH_Z) | (ap_uint<16>)z );
                 cout << setfill('0') << setw(2) << right << (int)(boardmat[id]);
             }
             cout << endl;
