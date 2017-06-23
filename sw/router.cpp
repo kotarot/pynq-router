@@ -372,12 +372,9 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 
     // プライオリティ・キュー
     ap_uint<16> pq_len = 0;
-    ap_uint<16> pq_nodes_priority[MAX_PQ];
-//#pragma HLS ARRAY_PARTITION variable=pq_nodes_priority complete dim=1
-//#pragma HLS ARRAY_PARTITION variable=pq_nodes_priority cyclic factor=2 dim=1 partition
-    ap_uint<16> pq_nodes_data[MAX_PQ];
-//#pragma HLS ARRAY_PARTITION variable=pq_nodes_data complete dim=1
-//#pragma HLS ARRAY_PARTITION variable=pq_nodes_data cyclic factor=2 dim=1 partition
+    ap_uint<32> pq_nodes[MAX_PQ];
+//#pragma HLS ARRAY_PARTITION variable=pq_nodes complete dim=1
+//#pragma HLS ARRAY_PARTITION variable=pq_nodes cyclic factor=2 dim=1 partition
 
 #ifdef DEBUG_PRINT
     // キューの最大長さチェック用
@@ -393,7 +390,7 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 #endif
 
     dist[start] = 0;
-    pq_push(0, start, &pq_len, pq_nodes_priority, pq_nodes_data); // 始点をpush
+    pq_push(0, start, &pq_len, pq_nodes); // 始点をpush
 #ifdef DEBUG_PRINT
     if (max_pq_len < pq_len) { max_pq_len = pq_len; }
 #endif
@@ -403,7 +400,7 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 
         ap_uint<16> prov_cost;
         ap_uint<16> src;
-        pq_pop(&prov_cost, &src, &pq_len, pq_nodes_priority, pq_nodes_data);
+        pq_pop(&prov_cost, &src, &pq_len, pq_nodes);
 
         ap_uint<16> dist_src = dist[src];
 
@@ -448,7 +445,7 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 #ifdef USE_ASTAR
                     dist_new += abs_uint7(dest_x, goal_x) + abs_uint7(dest_y, goal_y) + abs_uint3(dest_z, goal_z); // A* ヒューリスティック
 #endif
-                    pq_push(dist_new, dest, &pq_len, pq_nodes_priority, pq_nodes_data); // キューに新たな仮の距離の情報をpush
+                    pq_push(dist_new, dest, &pq_len, pq_nodes); // キューに新たな仮の距離の情報をpush
 #ifdef DEBUG_PRINT
                     if (max_pq_len < pq_len) { max_pq_len = pq_len; }
 #endif
@@ -507,32 +504,29 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 
 // プライオリティ・キュー (ヒープ)
 // 参考 https://rosettacode.org/wiki/Priority_queue#C
-void pq_push(ap_uint<16> priority, ap_uint<16> data, ap_uint<16> *pq_len, ap_uint<16> pq_nodes_priority[MAX_PQ], ap_uint<16> pq_nodes_data[MAX_PQ]) {
+void pq_push(ap_uint<16> priority, ap_uint<16> data, ap_uint<16> *pq_len, ap_uint<32> pq_nodes[MAX_PQ]) {
 #pragma HLS INLINE
 
     (*pq_len)++;
     ap_uint<16> i = *pq_len;
     ap_uint<16> j = (*pq_len) / 2;
-    while (i > 1 && pq_nodes_priority[j] > priority) {
+    while (i > 1 && (ap_uint<16>)(pq_nodes[j] & PQ_PRIORITY_MASK) > priority) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=10 avg=5
 //#pragma HLS PIPELINE
 //#pragma HLS UNROLL factor=2
-        pq_nodes_priority[i] = pq_nodes_priority[j];
-        pq_nodes_data[i]     = pq_nodes_data[j];
+        pq_nodes[i] = pq_nodes[j];
         i = j;
         j /= 2;
     }
-    pq_nodes_priority[i] = priority;
-    pq_nodes_data[i]     = data;
+    pq_nodes[i] = ((ap_uint<32>)data << 16) | (ap_uint<32>)priority;
 }
 
-void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<16> *pq_len, ap_uint<16> pq_nodes_priority[MAX_PQ], ap_uint<16> pq_nodes_data[MAX_PQ]) {
+void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<16> *pq_len, ap_uint<32> pq_nodes[MAX_PQ]) {
 #pragma HLS INLINE
 
-    *ret_priority = pq_nodes_priority[1];
-    *ret_data = pq_nodes_data[1];
-    pq_nodes_priority[1] = pq_nodes_priority[*pq_len];
-    pq_nodes_data[1]     = pq_nodes_data[*pq_len];
+    *ret_priority = (ap_uint<16>)(pq_nodes[1] & PQ_PRIORITY_MASK);
+    *ret_data     = (ap_uint<16>)(pq_nodes[1] >> 16);
+    pq_nodes[1] = pq_nodes[*pq_len];
     (*pq_len)--;
     ap_uint<16> i = 1;
     while (1) {
@@ -541,21 +535,19 @@ void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<16> *pq_le
 //#pragma HLS UNROLL factor=2
         ap_uint<16> k = i;
         ap_uint<16> j = 2 * i;
-        if (j <= *pq_len && pq_nodes_priority[j] < pq_nodes_priority[k]) {
+        if (j <= *pq_len && (ap_uint<16>)(pq_nodes[j] & PQ_PRIORITY_MASK) < (ap_uint<16>)(pq_nodes[k] & PQ_PRIORITY_MASK)) {
             k = j;
         }
-        if (j + 1 <= *pq_len && pq_nodes_priority[j + 1] < pq_nodes_priority[k]) {
+        if (j + 1 <= *pq_len && (ap_uint<16>)(pq_nodes[j + 1] & PQ_PRIORITY_MASK) < (ap_uint<16>)(pq_nodes[k] & PQ_PRIORITY_MASK)) {
             k = j + 1;
         }
         if (k == i) {
             break;
         }
-        pq_nodes_priority[i] = pq_nodes_priority[k];
-        pq_nodes_data[i]     = pq_nodes_data[k];
+        pq_nodes[i] = pq_nodes[k];
         i = k;
     }
-    pq_nodes_priority[i] = pq_nodes_priority[*pq_len + 1];
-    pq_nodes_data[i]     = pq_nodes_data[*pq_len + 1];
+    pq_nodes[i] = pq_nodes[*pq_len + 1];
 }
 
 #ifdef SOFTWARE

@@ -34,6 +34,9 @@ using namespace std;
 #define MAX_WEIGHT 255      // 重みの最大値 (8ビットで収まる)
 #define MAX_PQ     65536    // 探索時のプライオリティ・キューの最大サイズ
 
+#define PQ_PRIORITY_MASK 65535
+#define PQ_DATA_MASK     4294901760
+
 #define BOARDSTR_SIZE 32768 // ボードストリングの最大文字数 (15ビットで収まる : 値はとりあえず)
 
 
@@ -51,8 +54,8 @@ ap_uint<3> abs_uint3(ap_uint<3> a, ap_uint<3> b);
 #endif
 
 void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start, ap_uint<16> goal, ap_uint<8> w[MAX_WEIGHT]);
-void pq_push(ap_uint<16> priority, ap_uint<16> data, ap_uint<16> *pq_len, ap_uint<16> pq_nodes_priority[MAX_PQ], ap_uint<16> pq_nodes_data[MAX_PQ]);
-void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<16> *pq_len, ap_uint<16> pq_nodes_priority[MAX_PQ], ap_uint<16> pq_nodes_data[MAX_PQ]);
+void pq_push(ap_uint<16> priority, ap_uint<16> data, ap_uint<16> *pq_len, ap_uint<32> pq_nodes[MAX_PQ]);
+void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<16> *pq_len, ap_uint<32> pq_nodes[MAX_PQ]);
 
 #ifdef SOFTWARE
 void show_board(ap_uint<7> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<16> paths[MAX_LINES][MAX_PATH], ap_uint<16> starts[MAX_LINES], ap_uint<16> goals[MAX_LINES]);
