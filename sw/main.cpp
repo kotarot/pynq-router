@@ -4,26 +4,6 @@
  * for Vivado HLS
  */
 
-#ifndef SOFTWARE
-#include <stdio.h>
-#include <string.h>
-#endif
-
-#ifdef SOFTWARE
-#include <bitset>
-#include <iomanip>
-#include <iostream>
-#include <fstream>
-#include <sstream>
-
-#include <assert.h>
-#include <getopt.h>
-#include <limits.h>
-#include <math.h>
-#include <stdlib.h>
-#include <time.h>
-#endif
-
 #ifdef SOFTWARE
 #include "ap_int.h"
 #else

@@ -35,9 +35,9 @@ using namespace std;
 #define MAX_PQ     65536    // 探索時のプライオリティ・キューの最大サイズ
 
 #define PQ_PRIORITY_WIDTH 16
-#define PQ_PRIORITY_MASK  65535
+#define PQ_PRIORITY_MASK  65535       // 0000 0000 0000 0000 1111 1111 1111 1111
 #define PQ_DATA_WIDTH     16
-#define PQ_DATA_MASK      4294901760
+#define PQ_DATA_MASK      4294901760  // 1111 1111 1111 1111 0000 0000 0000 0000
 
 #define BOARDSTR_SIZE 32768 // ボードストリングの最大文字数 (15ビットで収まる : 値はとりあえず)
 
