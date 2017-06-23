@@ -383,7 +383,7 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 
 #ifdef USE_ASTAR
     // ゴールの座標
-    ap_uint<13> goal_xy = (ap_uint<13>)((goal & BITMASK_XY) >> BITWIDTH_Z);
+    ap_uint<13> goal_xy = (ap_uint<13>)(goal >> BITWIDTH_Z);
     ap_uint<7> goal_x = (ap_uint<7>)(goal_xy / MAX_WIDTH);
     ap_uint<7> goal_y = (ap_uint<7>)(goal_xy % MAX_WIDTH);
     ap_uint<3> goal_z = (ap_uint<3>)(goal & BITMASK_Z);
@@ -420,7 +420,7 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
         // (0) コスト
         ap_uint<8> cost = w[src];
         // (1) ノードIDから3次元座標をマスクして抜き出す
-        ap_uint<13> src_xy = (ap_uint<13>)((src & BITMASK_XY) >> BITWIDTH_Z);
+        ap_uint<13> src_xy = (ap_uint<13>)(src >> BITWIDTH_Z);
         ap_uint<7> src_x = (ap_uint<7>)(src_xy / MAX_WIDTH);
         ap_uint<7> src_y = (ap_uint<7>)(src_xy % MAX_WIDTH);
         ap_uint<3> src_z = (ap_uint<3>)(src & BITMASK_Z);
@@ -460,12 +460,12 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
     ap_uint<16> t = goal;
 
 #ifdef DEBUG_PRINT
-    int dbg_start_xy = (start & BITMASK_XY) >> BITWIDTH_Z;
+    int dbg_start_xy = start >> BITWIDTH_Z;
     int dbg_start_x = dbg_start_xy / MAX_WIDTH;
     int dbg_start_y = dbg_start_xy % MAX_WIDTH;
     int dbg_start_z = start & BITMASK_Z;
 
-    int dbg_goal_xy = (goal & BITMASK_XY) >> BITWIDTH_Z;
+    int dbg_goal_xy = goal >> BITWIDTH_Z;
     int dbg_goal_x = dbg_goal_xy / MAX_WIDTH;
     int dbg_goal_y = dbg_goal_xy % MAX_WIDTH;
     int dbg_goal_z = goal & BITMASK_Z;
@@ -479,7 +479,7 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
 
 #ifdef DEBUG_PRINT
-        int t_xy = (prev[t] & BITMASK_XY) >> BITWIDTH_Z;
+        int t_xy = prev[t] >> BITWIDTH_Z;
         int t_x = t_xy / MAX_WIDTH;
         int t_y = t_xy % MAX_WIDTH;
         int t_z = prev[t] & BITMASK_Z;
@@ -525,7 +525,7 @@ void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<16> *pq_le
 #pragma HLS INLINE
 
     *ret_priority = (ap_uint<16>)(pq_nodes[1] & PQ_PRIORITY_MASK);
-    *ret_data     = (ap_uint<16>)(pq_nodes[1] >> 16);
+    *ret_data     = (ap_uint<16>)(pq_nodes[1] >> PQ_PRIORITY_WIDTH);
     pq_nodes[1] = pq_nodes[*pq_len];
     (*pq_len)--;
     ap_uint<16> i = 1;
