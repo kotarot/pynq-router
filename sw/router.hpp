@@ -24,22 +24,22 @@ using namespace std;
 #define MAX_WIDTH   72      // X, Y の最大値 (7ビットで収まる)
 #define BITWIDTH_XY 13
 #define BITMASK_XY  65528   // 1111 1111 1111 1000
-#define MAX_LAYER   8       // Z の最大値 (3ビットで収まる)
+#define MAX_LAYER   8       // Z の最大値 (3ビット)
 #define BITWIDTH_Z  3
 #define BITMASK_Z   7       // 0000 0000 0000 0111
 
 #define MAX_CELLS  41472    // セルの総数 =72*72*8 (16ビットで収まる)
-#define MAX_LINES  128      // ライン数の最大値 (7ビットで収まる)
-#define MAX_PATH   256      // 1つのラインが対応するセル数の最大値 (8ビットで収まる)
-#define MAX_WEIGHT 255      // 重みの最大値 (8ビットで収まる)
-#define MAX_PQ     65536    // 探索時のプライオリティ・キューの最大サイズ
+#define MAX_LINES  128      // ライン数の最大値 (7ビット)
+#define MAX_PATH   256      // 1つのラインが対応するセル数の最大値 (8ビット)
+#define MAX_PQ     65536    // 探索時のプライオリティ・キューの最大サイズ (16ビット)
 
 #define PQ_PRIORITY_WIDTH 16
 #define PQ_PRIORITY_MASK  65535       // 0000 0000 0000 0000 1111 1111 1111 1111
 #define PQ_DATA_WIDTH     16
 #define PQ_DATA_MASK      4294901760  // 1111 1111 1111 1111 0000 0000 0000 0000
 
-#define BOARDSTR_SIZE 32768 // ボードストリングの最大文字数 (15ビットで収まる : 値はとりあえず)
+#define MAX_WEIGHT 255      // 重みの最大値 (8ビットで収まる)
+#define BOARDSTR_SIZE 32768 // ボードストリングの最大文字数 (15ビット : 値はとりあえず)
 
 
 void lfsr_random_init(ap_uint<32> seed);
