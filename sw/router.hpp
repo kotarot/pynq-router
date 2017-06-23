@@ -13,9 +13,7 @@
 #include <ap_int.h>
 #endif
 
-#ifdef SOFTWARE
-//#define DEBUG_PRINT
-#endif
+#define DEBUG_PRINT
 
 
 using namespace std;
@@ -37,7 +35,7 @@ using namespace std;
 
 #define BOARDSTR_SIZE 32768 // ボードストリングの最大文字数 (15ビットで収まる : 値はとりあえず)
 
-#define MAX_PQ 512          // 探索時のプライオリティ・キューの最大サイズ
+#define MAX_PQ 65536        // 探索時のプライオリティ・キューの最大サイズ
 
 #define MAX_WEIGHT  255     // 重みの最大値 (8ビットで収まる)
 

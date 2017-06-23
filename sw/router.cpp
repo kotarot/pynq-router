@@ -184,6 +184,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     ap_uint<1> overlap_checks[MAX_CELLS];
 
     // [Step 1] 初期ルーティング
+    cout << "Initial Routing" << endl;
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 //#pragma HLS UNROLL
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
@@ -191,7 +192,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         // 数字が隣接する場合スキップ、そうでない場合は実行
         if (adjacents[i] == false) {
 
-            // ダイクストラ法
+            // 経路探索
 #ifdef DEBUG_PRINT
             cout << "LINE #" << (int)(i + 1) << endl;
 #endif
@@ -243,7 +244,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
         }
 
-        // ダイクストラ法
+        // 経路探索
 #ifdef DEBUG_PRINT
         cout << "LINE #" << (int)(target + 1) << endl;
 #endif
@@ -364,8 +365,16 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 //#pragma HLS ARRAY_PARTITION variable=pq_nodes_data complete dim=1
 //#pragma HLS ARRAY_PARTITION variable=pq_nodes_data cyclic factor=2 dim=1 partition
 
+#ifdef DEBUG_PRINT
+    // キューの最大長さチェック用
+    ap_uint<16> max_pq_len = 0;
+#endif
+
     dist[start] = 0;
     pq_push(0, start, &pq_len, pq_nodes_priority, pq_nodes_data); // 始点をpush
+#ifdef DEBUG_PRINT
+    if (max_pq_len < pq_len) { max_pq_len = pq_len; }
+#endif
 
     while (0 < pq_len) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=2000 avg=1000
@@ -403,6 +412,9 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
                     if (dist[dest] > dist[src] + cost) {
                         dist[dest] = dist[src] + cost; // distの更新
                         pq_push(dist[dest], dest, &pq_len, pq_nodes_priority, pq_nodes_data); // キューに新たな仮の距離の情報をpush
+#ifdef DEBUG_PRINT
+                        if (max_pq_len < pq_len) { max_pq_len = pq_len; }
+#endif
                         prev[dest] = src; // 前の頂点を記録
                     }
                 }
@@ -449,6 +461,11 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
         p++;
     }
     *path_size = p;
+
+#ifdef DEBUG_PRINT
+    cout << "max_pq_len = " << max_pq_len << endl;
+#endif
+
 }
 
 // プライオリティ・キュー (ヒープ)
