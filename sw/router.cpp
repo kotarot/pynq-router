@@ -100,12 +100,14 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     // ================================
 
     // ループカウンタは1ビット余分に用意しないと終了判定できない
+    INIT_ADJACENTS:
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(MAX_LINES); i++) {
 //#pragma HLS UNROLL
         adjacents[i] = false;
     }
 
     // ボードストリングの解釈
+    INIT_BOARDS:
     for (ap_uint<16> idx = 0; idx < BOARDSTR_SIZE; ) {
 //#pragma HLS PIPELINE
 #pragma HLS LOOP_TRIPCOUNT min=100 max=32768 avg=1000
@@ -157,10 +159,12 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     }
     //cout << size_x << " " << size_y << " " << size_z << endl;
 
+    INIT_WEIGHTS:
     for (ap_uint<16> i = 0; i < (ap_uint<16>)(MAX_CELLS); i++) {
         weights[i] = 1;
     }
 
+    INIT_PATHS:
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
         paths_size[i] = 0;
@@ -185,6 +189,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
     // [Step 1] 初期ルーティング
     cout << "Initial Routing" << endl;
+    FIRST_ROUTING:
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 //#pragma HLS UNROLL
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
@@ -202,6 +207,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     }
 
     // [Step 2] Rip-up 再ルーティング
+    RE_ROUTING:
     for (ap_uint<16> round = 1; round <= 4000; round++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=4000 avg=50
 
@@ -223,13 +229,16 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         }
 
         // (1) 引きはがすラインの重みをリセット
+        RE_ROUTING_RESET:
         for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[target]); j++) {
+#pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
             weights[paths[target][j]] = 1;
         }
         // 対象ラインのスタートの重みも一旦リセット あとで (*) で戻す
         weights[starts[target]] = 1;
 
         // (2) 重みを更新
+        RE_ROUTING_UPDATE:
         ap_uint<8> current_round_weight = new_weight(round);
         for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
@@ -256,9 +265,12 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         // ルーティング後
         // オーバーラップのチェック
         has_overlap = false;
+        RE_ROUTING_OVERLAP_RESET:
         for (ap_uint<16> i = 0; i < (ap_uint<16>)(MAX_CELLS); i++) {
+#pragma HLS UNROLL factor=16
             overlap_checks[i] = 0;
         }
+        RE_ROUTING_OVERLAP_CHECK:
         for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
             overlap_checks[starts[i]] = 1;
