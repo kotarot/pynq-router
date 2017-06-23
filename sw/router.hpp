@@ -13,16 +13,14 @@
 #include <ap_int.h>
 #endif
 
-#define DEBUG_PRINT  // いろいろ表示する
-#define USE_ASTAR    // A* 探索を使う
+//#define DEBUG_PRINT  // いろいろ表示する
+//#define USE_ASTAR    // A* 探索を使う
 
 
 using namespace std;
 
 
 // 各種設定値
-#define NOT_USE -1
-
 #define MAX_WIDTH   72      // X, Y の最大値 (7ビットで収まる)
 #define BITWIDTH_XY 13
 #define BITMASK_XY  65528   // 1111 1111 1111 1000
@@ -30,15 +28,14 @@ using namespace std;
 #define BITWIDTH_Z  3
 #define BITMASK_Z   7       // 0000 0000 0000 0111
 
-#define MAX_CELLS 41472     // セルの総数 =72*72*8 (16ビットで収まる)
-#define MAX_LINES 128       // ライン数の最大値 (7ビットで収まる)
-#define MAX_PATH 256        // 1つのラインが対応するセル数の最大値 (8ビットで収まる)
+#define MAX_CELLS  41472    // セルの総数 =72*72*8 (16ビットで収まる)
+#define MAX_LINES  128      // ライン数の最大値 (7ビットで収まる)
+#define MAX_PATH   256      // 1つのラインが対応するセル数の最大値 (8ビットで収まる)
+#define MAX_WEIGHT 255      // 重みの最大値 (8ビットで収まる)
+#define MAX_PQ     65536    // 探索時のプライオリティ・キューの最大サイズ
 
 #define BOARDSTR_SIZE 32768 // ボードストリングの最大文字数 (15ビットで収まる : 値はとりあえず)
 
-#define MAX_PQ 65536        // 探索時のプライオリティ・キューの最大サイズ
-
-#define MAX_WEIGHT  255     // 重みの最大値 (8ビットで収まる)
 
 void lfsr_random_init(ap_uint<32> seed);
 ap_uint<32> lfsr_random();
