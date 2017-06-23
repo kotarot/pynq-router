@@ -16,7 +16,7 @@ class MAP:
         self.X=X
         self.Y=Y
         self.Z=Z
-        self.name="%d-%d-%d" % (self.X, self.Y, self.Z)
+        self.name="%dx%dx%d" % (self.X, self.Y, self.Z)
         self.map=np.zeros((self.X, self.Y, self.Z))
         self.mapdic=0
         self.n_line=0
@@ -71,7 +71,7 @@ class MAP:
         str.append("SIZE %dX%dX%d\n" % (self.X, self.Y, self.Z))
         str.append("LINE_NUM %d\n\n" % (self.n_line))
         for i,line in enumerate(self.line):
-            str.append("LINE#%d (%d,%d,%d) (%d,%d,%d)\n" % (i+1, line[0][0], line[0][1], line[0][2]+1, line[1][0], line[1][1], line[1][2]+1))
+            str.append("LINE#%d (%d,%d,%d)%s(%d,%d,%d)\n" % (i+1, line[0][0], line[0][1], line[0][2]+1, random.choice([' ', '-']), line[1][0], line[1][1], line[1][2]+1))
         return "".join(str)
 
     def strA(self):
@@ -140,9 +140,8 @@ class MAP:
         nlist=point+dlist
         return nlist
 
-    def addLine(self):
+    def addLine(self, maxlength):
         MAXLOOP=1000
-        MAXLENGTH=10
         for i in range(MAXLOOP):
             start=np.array([[random.randrange(self.X), random.randrange(self.Y), random.randrange(self.Z)]])
             if len(self.isblank(start))!=0:break
@@ -151,7 +150,7 @@ class MAP:
         self.n_line=self.n_line+1
         point = start[0]
         self.map[tuple(point)]=self.n_line
-        for i in range(MAXLENGTH):
+        for i in range(maxlength):
             points = self.neighbour(point)
             points = self.isregular(points)
             points = self.isblank(points)
@@ -190,10 +189,10 @@ class MAP:
                     i
 
 
-    def generate(self, linenum):
-        self.name="".join([self.name,"-%d" % (linenum)])
+    def generate(self, linenum, maxlength):
+        self.name="".join([self.name,"_%d_%d" % (linenum, maxlength)])
         for i in range(linenum):
-            self.addLine()
+            self.addLine(maxlength)
         #for i in range(self.n_line):
         #    self.optLine(i)
 
@@ -209,10 +208,12 @@ if __name__ == '__main__':
                         help='Z size')
     parser.add_argument('--linenum', '-l', default=100, type=int,
                         help='Maximum number of lines')
+    parser.add_argument('--maxlength', '-m', default=10, type=int,
+                        help='Maximum length of lines')
     args = parser.parse_args()
 
     m=MAP(args.x, args.y, args.z)
-    m.generate(args.linenum)
+    m.generate(args.linenum, args.maxlength)
 
     m.save() 
     #m.saveQ()
