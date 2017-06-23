@@ -14,7 +14,7 @@
 #endif
 
 //#define DEBUG_PRINT  // ‚¢‚ë‚¢‚ë•\¦‚·‚é
-//#define USE_ASTAR    // A* ’Tõ‚ğg‚¤
+//#define USE_ASTAR    // A* ’Tõ‚ğg‚¤ (‘½•ª‚ ‚Ü‚è‚æ‚­‚È‚ç‚È‚¢)
 
 
 using namespace std;
