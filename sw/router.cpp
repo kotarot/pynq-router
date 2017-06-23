@@ -319,12 +319,12 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
     // boardmat を文字列化 (ただし、表示できる文字とは限らない)
     ap_uint<16> i = 0;
-    for (ap_uint<7> x = 0; x < (ap_uint<7>)(size_x); x++) {
-#pragma HLS LOOP_TRIPCOUNT min=4 max=72 avg=20
+    for (ap_uint<4> z = 0; z < (ap_uint<4>)(size_z); z++) {
+#pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=4
         for (ap_uint<7> y = 0; y < (ap_uint<7>)(size_y); y++) {
 #pragma HLS LOOP_TRIPCOUNT min=4 max=72 avg=20
-            for (ap_uint<4> z = 0; z < (ap_uint<4>)(size_z); z++) {
-#pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=4
+            for (ap_uint<7> x = 0; x < (ap_uint<7>)(size_x); x++) {
+#pragma HLS LOOP_TRIPCOUNT min=4 max=72 avg=4
                 ap_uint<16> cell_id = (((ap_uint<16>)x * MAX_WIDTH + (ap_uint<16>)y) << BITWIDTH_Z) | (ap_uint<16>)z;
                 boardstr[i] = boardmat[cell_id];
                 i++;
@@ -344,6 +344,18 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 // ================================ //
 // 探索
 // ================================ //
+
+// A* ヒューリスティック用
+// 最大71 最小0
+ap_uint<7> abs_uint7(ap_uint<7> a, ap_uint<7> b) {
+    if (a < b) { return b - a; }
+    else  { return a - b; }
+}
+// 最大7 最小0
+ap_uint<3> abs_uint3(ap_uint<3> a, ap_uint<3> b) {
+    if (a < b) { return b - a; }
+    else  { return a - b; }
+}
 
 // Pythonでダイクストラアルゴリズムを実装した - フツーって言うなぁ！
 // http://lethe2211.hatenablog.com/entry/2014/12/30/011030
@@ -370,6 +382,14 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
     ap_uint<16> max_pq_len = 0;
 #endif
 
+#ifdef USE_ASTAR
+    // ゴールの座標
+    ap_uint<13> goal_xy = (ap_uint<13>)((goal & BITMASK_XY) >> BITWIDTH_Z);
+    ap_uint<7> goal_x = (ap_uint<7>)(goal_xy / MAX_WIDTH);
+    ap_uint<7> goal_y = (ap_uint<7>)(goal_xy % MAX_WIDTH);
+    ap_uint<3> goal_z = (ap_uint<3>)(goal & BITMASK_Z);
+#endif
+
     dist[start] = 0;
     pq_push(0, start, &pq_len, pq_nodes_priority, pq_nodes_data); // 始点をpush
 #ifdef DEBUG_PRINT
@@ -383,9 +403,20 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
         ap_uint<16> src;
         pq_pop(&prov_cost, &src, &pq_len, pq_nodes_priority, pq_nodes_data);
 
+        ap_uint<16> dist_src = dist[src];
+
+#ifndef USE_ASTAR
         // プライオリティキューに格納されている最短距離が，現在計算できている最短距離より大きければ，distの更新をする必要はない
-        // そうでない場合は計算する
-        if (dist[src] >= prov_cost) {
+        if (dist_src < prov_cost) {
+            continue;
+        }
+#endif
+
+        // PQの先頭がゴールの場合に探索終わらせしまう場合 (多分これやるのはそんなによくない)
+        /*if (src == goal) {
+            break;
+        }*/
+
             // 隣接する他の頂点の探索
             // (0) コスト
             ap_uint<8> cost = w[src];
@@ -409,17 +440,20 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 
                 if (0 <= dest_x && dest_x < (ap_int<8>)size_x && 0 <= dest_y && dest_y < (ap_int<8>)size_y && 0 <= dest_z && dest_z < (ap_int<5>)size_z) {
                     ap_uint<16> dest = (((ap_uint<16>)dest_x * MAX_WIDTH + (ap_uint<16>)dest_y) << BITWIDTH_Z) | (ap_uint<16>)dest_z;
-                    if (dist[dest] > dist[src] + cost) {
-                        dist[dest] = dist[src] + cost; // distの更新
-                        pq_push(dist[dest], dest, &pq_len, pq_nodes_priority, pq_nodes_data); // キューに新たな仮の距離の情報をpush
+                    ap_uint<16> dist_new = dist_src + cost;
+                    if (dist[dest] > dist_new) {
+                        dist[dest] = dist_new; // distの更新
+#ifdef USE_ASTAR
+                        dist_new += abs_uint7(dest_x, goal_x) + abs_uint7(dest_y, goal_y) + abs_uint3(dest_z, goal_z); // A* ヒューリスティック
+#endif
+                        pq_push(dist_new, dest, &pq_len, pq_nodes_priority, pq_nodes_data); // キューに新たな仮の距離の情報をpush
 #ifdef DEBUG_PRINT
                         if (max_pq_len < pq_len) { max_pq_len = pq_len; }
 #endif
                         prev[dest] = src; // 前の頂点を記録
                     }
                 }
-             }
-        }
+            }
     }
 
     // 経路を出力
@@ -427,18 +461,18 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
     ap_uint<16> t = goal;
 
 #ifdef DEBUG_PRINT
-    int start_xy = (start & BITMASK_XY) >> BITWIDTH_Z;
-    int start_x = start_xy / MAX_WIDTH;
-    int start_y = start_xy % MAX_WIDTH;
-    int start_z = start & BITMASK_Z;
+    int dbg_start_xy = (start & BITMASK_XY) >> BITWIDTH_Z;
+    int dbg_start_x = dbg_start_xy / MAX_WIDTH;
+    int dbg_start_y = dbg_start_xy % MAX_WIDTH;
+    int dbg_start_z = start & BITMASK_Z;
 
-    int goal_xy = (goal & BITMASK_XY) >> BITWIDTH_Z;
-    int goal_x = goal_xy / MAX_WIDTH;
-    int goal_y = goal_xy % MAX_WIDTH;
-    int goal_z = goal & BITMASK_Z;
+    int dbg_goal_xy = (goal & BITMASK_XY) >> BITWIDTH_Z;
+    int dbg_goal_x = dbg_goal_xy / MAX_WIDTH;
+    int dbg_goal_y = dbg_goal_xy % MAX_WIDTH;
+    int dbg_goal_z = goal & BITMASK_Z;
 
-    cout << "(" << start_x << ", " << start_y << ", " << start_z << ") #" << start << " -> "
-         << "(" << goal_x  << ", " << goal_y  << ", " << goal_z  << ") #" << goal << endl;
+    cout << "(" << dbg_start_x << ", " << dbg_start_y << ", " << dbg_start_z << ") #" << start << " -> "
+         << "(" << dbg_goal_x  << ", " << dbg_goal_y  << ", " << dbg_goal_z  << ") #" << goal << endl;
 #endif
 
     ap_uint<8> p = 0;
@@ -463,6 +497,7 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
     *path_size = p;
 
 #ifdef DEBUG_PRINT
+    cout << "max_path_len = " << p << endl;
     cout << "max_pq_len = " << max_pq_len << endl;
 #endif
 
@@ -533,11 +568,9 @@ void show_board(ap_uint<7> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<1
     // このソルバでのラインIDを+1して表示する
     // なぜなら空白を 0 で表すことにするからラインIDは 1 以上にしたい
     for (int i = 0; i < (int)(line_num); i++) {
-#pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
         boardmat[starts[i]] = (i + 1);
         boardmat[goals[i]]  = (i + 1);
         for (int j = 0; j < (int)(paths_size[i]); j++) {
-#pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
             boardmat[paths[i][j]] = (i + 1);
         }
     }
