@@ -357,8 +357,10 @@ ap_uint<3> abs_uint3(ap_uint<3> a, ap_uint<3> b) {
     else  { return a - b; }
 }
 
-// Pythonでダイクストラアルゴリズムを実装した - フツーって言うなぁ！
-// http://lethe2211.hatenablog.com/entry/2014/12/30/011030
+// * Pythonでダイクストラアルゴリズムを実装した - フツーって言うなぁ！
+//   http://lethe2211.hatenablog.com/entry/2014/12/30/011030
+// * Implementation of A*
+//   http://www.redblobgames.com/pathfinding/a-star/implementation.html
 // をベース
 void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start, ap_uint<16> goal, ap_uint<8> w[MAX_CELLS]) {
 
