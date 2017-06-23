@@ -417,43 +417,43 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
             break;
         }*/
 
-            // 隣接する他の頂点の探索
-            // (0) コスト
-            ap_uint<8> cost = w[src];
-            // (1) ノードIDから3次元座標をマスクして抜き出す
-            ap_uint<13> src_xy = (ap_uint<13>)((src & BITMASK_XY) >> BITWIDTH_Z);
-            ap_uint<7> src_x = (ap_uint<7>)(src_xy / MAX_WIDTH);
-            ap_uint<7> src_y = (ap_uint<7>)(src_xy % MAX_WIDTH);
-            ap_uint<3> src_z = (ap_uint<3>)(src & BITMASK_Z);
-            //cout << src << " " << src_x << " " << src_y << " " << src_z << endl;
-            // (2) 3次元座標で隣接するノード (6個) を調べる
-            for (ap_uint<3> a = 0; a < 6; a++) {
-                ap_int<8> dest_x = (ap_int<8>)src_x; // 最小-1 最大72 (->符号付き8ビット)
-                ap_int<8> dest_y = (ap_int<8>)src_y; // 最小-1 最大72 (->符号付き8ビット)
-                ap_int<5> dest_z = (ap_int<5>)src_z; // 最小-1 最大8  (->符号付き5ビット)
-                if (a == 0) { dest_x -= 1; }
-                if (a == 1) { dest_x += 1; }
-                if (a == 2) { dest_y -= 1; }
-                if (a == 3) { dest_y += 1; }
-                if (a == 4) { dest_z -= 1; }
-                if (a == 5) { dest_z += 1; }
+        // 隣接する他の頂点の探索
+        // (0) コスト
+        ap_uint<8> cost = w[src];
+        // (1) ノードIDから3次元座標をマスクして抜き出す
+        ap_uint<13> src_xy = (ap_uint<13>)((src & BITMASK_XY) >> BITWIDTH_Z);
+        ap_uint<7> src_x = (ap_uint<7>)(src_xy / MAX_WIDTH);
+        ap_uint<7> src_y = (ap_uint<7>)(src_xy % MAX_WIDTH);
+        ap_uint<3> src_z = (ap_uint<3>)(src & BITMASK_Z);
+        //cout << src << " " << src_x << " " << src_y << " " << src_z << endl;
+        // (2) 3次元座標で隣接するノード (6個) を調べる
+        for (ap_uint<3> a = 0; a < 6; a++) {
+            ap_int<8> dest_x = (ap_int<8>)src_x; // 最小-1 最大72 (->符号付き8ビット)
+            ap_int<8> dest_y = (ap_int<8>)src_y; // 最小-1 最大72 (->符号付き8ビット)
+            ap_int<5> dest_z = (ap_int<5>)src_z; // 最小-1 最大8  (->符号付き5ビット)
+            if (a == 0) { dest_x -= 1; }
+            if (a == 1) { dest_x += 1; }
+            if (a == 2) { dest_y -= 1; }
+            if (a == 3) { dest_y += 1; }
+            if (a == 4) { dest_z -= 1; }
+            if (a == 5) { dest_z += 1; }
 
-                if (0 <= dest_x && dest_x < (ap_int<8>)size_x && 0 <= dest_y && dest_y < (ap_int<8>)size_y && 0 <= dest_z && dest_z < (ap_int<5>)size_z) {
-                    ap_uint<16> dest = (((ap_uint<16>)dest_x * MAX_WIDTH + (ap_uint<16>)dest_y) << BITWIDTH_Z) | (ap_uint<16>)dest_z;
-                    ap_uint<16> dist_new = dist_src + cost;
-                    if (dist[dest] > dist_new) {
-                        dist[dest] = dist_new; // distの更新
+            if (0 <= dest_x && dest_x < (ap_int<8>)size_x && 0 <= dest_y && dest_y < (ap_int<8>)size_y && 0 <= dest_z && dest_z < (ap_int<5>)size_z) {
+                ap_uint<16> dest = (((ap_uint<16>)dest_x * MAX_WIDTH + (ap_uint<16>)dest_y) << BITWIDTH_Z) | (ap_uint<16>)dest_z;
+                ap_uint<16> dist_new = dist_src + cost;
+                if (dist[dest] > dist_new) {
+                    dist[dest] = dist_new; // distの更新
 #ifdef USE_ASTAR
-                        dist_new += abs_uint7(dest_x, goal_x) + abs_uint7(dest_y, goal_y) + abs_uint3(dest_z, goal_z); // A* ヒューリスティック
+                    dist_new += abs_uint7(dest_x, goal_x) + abs_uint7(dest_y, goal_y) + abs_uint3(dest_z, goal_z); // A* ヒューリスティック
 #endif
-                        pq_push(dist_new, dest, &pq_len, pq_nodes_priority, pq_nodes_data); // キューに新たな仮の距離の情報をpush
+                    pq_push(dist_new, dest, &pq_len, pq_nodes_priority, pq_nodes_data); // キューに新たな仮の距離の情報をpush
 #ifdef DEBUG_PRINT
-                        if (max_pq_len < pq_len) { max_pq_len = pq_len; }
+                    if (max_pq_len < pq_len) { max_pq_len = pq_len; }
 #endif
-                        prev[dest] = src; // 前の頂点を記録
-                    }
+                    prev[dest] = src; // 前の頂点を記録
                 }
             }
+        }
     }
 
     // 経路を出力
