@@ -80,16 +80,17 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     *status = -127;
 
     ap_uint<16> starts[MAX_LINES];          // ラインのスタートリスト
-//#pragma HLS ARRAY_PARTITION variable=starts complete dim=0
+#pragma HLS ARRAY_PARTITION variable=starts complete dim=1
     ap_uint<16> goals[MAX_LINES];           // ラインのゴールリスト
-//#pragma HLS ARRAY_PARTITION variable=goals complete dim=0
+#pragma HLS ARRAY_PARTITION variable=goals complete dim=1
 
     ap_uint<8> weights[MAX_CELLS];          // セルの重み
+//#pragma HLS ARRAY_PARTITION variable=weights cyclic factor=8 dim=1 partition
     ap_uint<8> paths_size[MAX_LINES];       // ラインが対応するセルIDのサイズ
-#pragma HLS ARRAY_PARTITION variable=paths_size complete dim=0
+#pragma HLS ARRAY_PARTITION variable=paths_size complete dim=1
     ap_uint<16> paths[MAX_LINES][MAX_PATH]; // ラインが対応するセルIDの集合 (スタートとゴールは除く)
     bool adjacents[MAX_LINES];              // スタートとゴールが隣接しているライン
-#pragma HLS ARRAY_PARTITION variable=adjacents complete dim=0
+#pragma HLS ARRAY_PARTITION variable=adjacents complete dim=1
 
 #ifdef SOFTWARE
     ap_int<9> boardmat[MAX_CELLS];          // ボードマトリックス
@@ -102,14 +103,12 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     // ループカウンタは1ビット余分に用意しないと終了判定できない
     INIT_ADJACENTS:
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(MAX_LINES); i++) {
-//#pragma HLS UNROLL
         adjacents[i] = false;
     }
 
     // ボードストリングの解釈
     INIT_BOARDS:
     for (ap_uint<16> idx = 0; idx < BOARDSTR_SIZE; ) {
-//#pragma HLS PIPELINE
 #pragma HLS LOOP_TRIPCOUNT min=100 max=32768 avg=1000
 
         if (boardstr[idx] == 'X') {
@@ -161,12 +160,16 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
     INIT_WEIGHTS:
     for (ap_uint<16> i = 0; i < (ap_uint<16>)(MAX_CELLS); i++) {
+//#pragma HLS PIPELINE
+//#pragma HLS UNROLL factor=8
         weights[i] = 1;
     }
 
     INIT_PATHS:
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
+#pragma HLS PIPELINE II=2
+//#pragma HLS UNROLL factor=2
         paths_size[i] = 0;
         // スタートとゴールの重みは最大にしておく
         weights[starts[i]] = MAX_WEIGHT;
@@ -186,13 +189,15 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
     bool has_overlap = false;
     ap_uint<1> overlap_checks[MAX_CELLS];
+#pragma HLS ARRAY_PARTITION variable=overlap_checks cyclic factor=16 dim=1 partition
 
     // [Step 1] 初期ルーティング
     cout << "Initial Routing" << endl;
     FIRST_ROUTING:
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
-//#pragma HLS UNROLL
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
+//#pragma HLS PIPELINE
+//#pragma HLS UNROLL factor=2
 
         // 数字が隣接する場合スキップ、そうでない場合は実行
         if (adjacents[i] == false) {
@@ -357,11 +362,13 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 // A* ヒューリスティック用
 // 最大71 最小0
 ap_uint<7> abs_uint7(ap_uint<7> a, ap_uint<7> b) {
+#pragma HLS INLINE
     if (a < b) { return b - a; }
     else  { return a - b; }
 }
 // 最大7 最小0
 ap_uint<3> abs_uint3(ap_uint<3> a, ap_uint<3> b) {
+#pragma HLS INLINE
     if (a < b) { return b - a; }
     else  { return a - b; }
 }
@@ -373,6 +380,9 @@ ap_uint<3> abs_uint3(ap_uint<3> a, ap_uint<3> b) {
 //   http://www.redblobgames.com/pathfinding/a-star/implementation.html
 // をベース
 void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start, ap_uint<16> goal, ap_uint<8> w[MAX_CELLS]) {
+//#pragma HLS INLINE // search関数はインラインすると遅くなるしBRAM足りなくなる
+//#pragma HLS FUNCTION_INSTANTIATE variable=start
+//#pragma HLS FUNCTION_INSTANTIATE variable=goal
 
     ap_uint<16> dist[MAX_CELLS]; // 始点から各頂点までの最短距離を格納する
     ap_uint<16> prev[MAX_CELLS]; // 最短経路における，その頂点の前の頂点のIDを格納する
@@ -446,6 +456,8 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
         // (2) 3次元座標で隣接するノード (6個) を調べる
         SEARCH_ADJACENTS:
         for (ap_uint<3> a = 0; a < 6; a++) {
+//#pragma HLS PIPELINE
+//#pragma HLS UNROLL factor=2
             ap_int<8> dest_x = (ap_int<8>)src_x; // 最小-1 最大72 (->符号付き8ビット)
             ap_int<8> dest_y = (ap_int<8>)src_y; // 最小-1 最大72 (->符号付き8ビット)
             ap_int<5> dest_z = (ap_int<5>)src_z; // 最小-1 最大8  (->符号付き5ビット)
@@ -508,6 +520,8 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
     SEARCH_BACKTRACK:
     while (1) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
+//#pragma HLS PIPELINE
+//#pragma HLS UNROLL factor=2
 
 #ifdef DEBUG_PRINT
         int t_xy = prev[t] >> BITWIDTH_Z;
