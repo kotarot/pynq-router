@@ -14,7 +14,7 @@
 #endif
 
 //#define DEBUG_PRINT  // いろいろ表示する
-//#define USE_ASTAR    // A* 探索を使う (多分あまりよくならない)
+#define USE_ASTAR    // A* 探索を使う (多分あまりよくならない)
 
 
 using namespace std;
@@ -31,7 +31,7 @@ using namespace std;
 #define MAX_CELLS  41472    // セルの総数 =72*72*8 (16ビットで収まる)
 #define MAX_LINES  128      // ライン数の最大値 (7ビット)
 #define MAX_PATH   256      // 1つのラインが対応するセル数の最大値 (8ビット)
-#define MAX_PQ     65536    // 探索時のプライオリティ・キューの最大サイズ (16ビット)
+#define MAX_PQ     4096     // 探索時のプライオリティ・キューの最大サイズ (12ビット) 足りないかも？
 
 #define PQ_PRIORITY_WIDTH 16
 #define PQ_PRIORITY_MASK  65535       // 0000 0000 0000 0000 1111 1111 1111 1111
@@ -56,8 +56,8 @@ ap_uint<3> abs_uint3(ap_uint<3> a, ap_uint<3> b);
 #endif
 
 void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start, ap_uint<16> goal, ap_uint<8> w[MAX_WEIGHT]);
-void pq_push(ap_uint<16> priority, ap_uint<16> data, ap_uint<16> *pq_len, ap_uint<32> pq_nodes[MAX_PQ]);
-void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<16> *pq_len, ap_uint<32> pq_nodes[MAX_PQ]);
+void pq_push(ap_uint<16> priority, ap_uint<16> data, ap_uint<12> *pq_len, ap_uint<32> pq_nodes[MAX_PQ]);
+void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<12> *pq_len, ap_uint<32> pq_nodes[MAX_PQ]);
 
 #ifdef SOFTWARE
 void show_board(ap_uint<7> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<16> paths[MAX_LINES][MAX_PATH], ap_uint<16> starts[MAX_LINES], ap_uint<16> goals[MAX_LINES]);
