@@ -212,16 +212,12 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 #pragma HLS LOOP_TRIPCOUNT min=1 max=4000 avg=50
 
 //#ifdef DEBUG_PRINT
-//if (round % 100 == 0) {
         cout << "ROUND " << round << endl;
         //show_board(line_num, paths_size, paths, starts, goals);
-//}
 //#endif
 
         // 対象ラインを選択
-        //ap_uint<8> target = lfsr_random_uint32(0, line_num - 1);
-        //ap_uint<8> target = lfsr_random_uint32_0(line_num - 1);
-        ap_uint<8> target = lfsr_random() % line_num;
+        ap_uint<8> target = lfsr_random() % line_num; // i.e., lfsr_random_uint32(0, line_num - 1);
 
         // 数字が隣接する場合スキップ、そうでない場合は実行
         if (adjacents[target] == true) {
