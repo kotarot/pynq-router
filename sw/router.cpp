@@ -86,9 +86,12 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
     ap_uint<8> weights[MAX_CELLS];          // セルの重み
 //#pragma HLS ARRAY_PARTITION variable=weights cyclic factor=8 dim=1 partition
+// Note: weights は様々な順番でアクセスされるからパーティションしても全然効果ない
+
     ap_uint<8> paths_size[MAX_LINES];       // ラインが対応するセルIDのサイズ
 #pragma HLS ARRAY_PARTITION variable=paths_size complete dim=1
     ap_uint<16> paths[MAX_LINES][MAX_PATH]; // ラインが対応するセルIDの集合 (スタートとゴールは除く)
+#pragma HLS ARRAY_PARTITION variable=paths cyclic factor=16 dim=2 partition
     bool adjacents[MAX_LINES];              // スタートとゴールが隣接しているライン
 #pragma HLS ARRAY_PARTITION variable=adjacents complete dim=1
 
@@ -212,7 +215,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     }
 
     // [Step 2] Rip-up 再ルーティング
-    RE_ROUTING:
+    ROUTING:
     for (ap_uint<16> round = 1; round <= 4000; round++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=4000 avg=50
 
@@ -230,7 +233,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         }
 
         // (1) 引きはがすラインの重みをリセット
-        RE_ROUTING_RESET:
+        ROUTING_RESET:
         for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[target]); j++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
             weights[paths[target][j]] = 1;
@@ -239,13 +242,14 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         weights[starts[target]] = 1;
 
         // (2) 重みを更新
-        RE_ROUTING_UPDATE:
         ap_uint<8> current_round_weight = new_weight(round);
+        ROUTING_UPDATE:
         for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
 
             // 数字が隣接する場合スキップ、そうでない場合は実行
             if (adjacents[i] == false && i != target) {
+                ROUTING_UPDATE_PATH:
                 for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
                     weights[paths[i][j]] = current_round_weight;
@@ -266,12 +270,12 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         // ルーティング後
         // オーバーラップのチェック
         has_overlap = false;
-        RE_ROUTING_OVERLAP_RESET:
+        OVERLAP_RESET:
         for (ap_uint<16> i = 0; i < (ap_uint<16>)(MAX_CELLS); i++) {
 #pragma HLS UNROLL factor=16
             overlap_checks[i] = 0;
         }
-        RE_ROUTING_OVERLAP_CHECK:
+        OVERLAP_CHECK:
         for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
             overlap_checks[starts[i]] = 1;
@@ -280,8 +284,10 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
             // 数字が隣接する場合スキップ、そうでない場合は実行
             if (adjacents[i] == false) {
 
+                OVERLAP_CHECK_PATH:
                 for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
+#pragma HLS UNROLL factor=16
                     ap_uint<16> cell_id = paths[i][j];
                     if (overlap_checks[cell_id] == 1) {
                         has_overlap = true;
@@ -385,9 +391,13 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 //#pragma HLS FUNCTION_INSTANTIATE variable=goal
 
     ap_uint<16> dist[MAX_CELLS]; // 始点から各頂点までの最短距離を格納する
+#pragma HLS ARRAY_PARTITION variable=dist cyclic factor=64 dim=1 partition
+// Note: dist のパーティションの factor は 128 にするとBRAMが足りなくなる
     ap_uint<16> prev[MAX_CELLS]; // 最短経路における，その頂点の前の頂点のIDを格納する
+
     SEARCH_INIT_DIST:
     for (ap_uint<16> i = 0; i < MAX_CELLS; i++) {
+#pragma HLS UNROLL factor=64
         dist[i] = 65535; // = (2^16 - 1)
     }
 
@@ -521,7 +531,6 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
     while (1) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
 //#pragma HLS PIPELINE
-//#pragma HLS UNROLL factor=2
 
 #ifdef DEBUG_PRINT
         int t_xy = prev[t] >> BITWIDTH_Z;
