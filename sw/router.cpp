@@ -505,7 +505,8 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 
     // バックトラック
     ap_uint<8> p = 0;
-    while (prev[t] != start) {
+    SEARCH_BACKTRACK:
+    while (1) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
 
 #ifdef DEBUG_PRINT
@@ -513,14 +514,15 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
         int t_x = t_xy / MAX_WIDTH;
         int t_y = t_xy % MAX_WIDTH;
         int t_z = prev[t] & BITMASK_Z;
-
         cout << "  via " << "(" << t_x << ", " << t_y << ", " << t_z << ") #" << prev[t] << " dist=" << dist[t] << endl;
 #endif
 
-        // マッピングへ記録
-        path[p] = prev[t];
-
         t = prev[t];
+        if (t == start) {
+            break;
+        }
+        // マッピングへ記録
+        path[p] = t;
         p++;
     }
     *path_size = p;
