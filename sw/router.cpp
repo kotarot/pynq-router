@@ -109,6 +109,13 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         adjacents[i] = false;
     }
 
+    INIT_WEIGHTS:
+    for (ap_uint<16> i = 0; i < (ap_uint<16>)(MAX_CELLS); i++) {
+//#pragma HLS PIPELINE
+//#pragma HLS UNROLL factor=8
+        weights[i] = 1;
+    }
+
     // ボードストリングの解釈
     INIT_BOARDS:
     for (ap_uint<16> idx = 0; idx < BOARDSTR_SIZE; ) {
@@ -138,8 +145,10 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
             idx += 11;
 
             // スタートとゴール
-            starts[line_num] = (((ap_uint<16>)s_x * MAX_WIDTH + (ap_uint<16>)s_y) << BITWIDTH_Z) | (ap_uint<16>)s_z;
-            goals[line_num]  = (((ap_uint<16>)g_x * MAX_WIDTH + (ap_uint<16>)g_y) << BITWIDTH_Z) | (ap_uint<16>)g_z;
+            ap_uint<16> start_id = (((ap_uint<16>)s_x * MAX_WIDTH + (ap_uint<16>)s_y) << BITWIDTH_Z) | (ap_uint<16>)s_z;
+            ap_uint<16> goal_id  = (((ap_uint<16>)g_x * MAX_WIDTH + (ap_uint<16>)g_y) << BITWIDTH_Z) | (ap_uint<16>)g_z;
+            starts[line_num] = start_id;
+            goals[line_num]  = goal_id;
 
             // 初期状態で数字が隣接しているか判断
             ap_int<8> dx = (ap_int<8>)g_x - (ap_int<8>)s_x; // 最小-71 最大71 (-> 符号付き8ビット)
@@ -151,6 +160,10 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
                 adjacents[line_num] = false;
             }
 
+            paths_size[line_num] = 0;
+            weights[start_id] = MAX_WEIGHT;
+            weights[goal_id]  = MAX_WEIGHT;
+
             line_num++;
         }
 
@@ -160,24 +173,6 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         }
     }
     //cout << size_x << " " << size_y << " " << size_z << endl;
-
-    INIT_WEIGHTS:
-    for (ap_uint<16> i = 0; i < (ap_uint<16>)(MAX_CELLS); i++) {
-//#pragma HLS PIPELINE
-//#pragma HLS UNROLL factor=8
-        weights[i] = 1;
-    }
-
-    INIT_PATHS:
-    for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
-#pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
-#pragma HLS PIPELINE II=2
-//#pragma HLS UNROLL factor=2
-        paths_size[i] = 0;
-        // スタートとゴールの重みは最大にしておく
-        weights[starts[i]] = MAX_WEIGHT;
-        weights[goals[i]]  = MAX_WEIGHT;
-    }
 
     // 乱数の初期化
     lfsr_random_init(seed);
@@ -287,6 +282,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
                 OVERLAP_CHECK_PATH:
                 for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
+#pragma HLS PIPELINE rewind II=33
 #pragma HLS UNROLL factor=16
                     ap_uint<16> cell_id = paths[i][j];
                     if (overlap_checks[cell_id] == 1) {
@@ -530,7 +526,7 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
     SEARCH_BACKTRACK:
     while (1) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
-//#pragma HLS PIPELINE
+#pragma HLS PIPELINE rewind II=2
 
 #ifdef DEBUG_PRINT
         int t_xy = prev[t] >> BITWIDTH_Z;
@@ -583,7 +579,7 @@ void pq_push(ap_uint<16> priority, ap_uint<16> data, ap_uint<12> *pq_len, ap_uin
     PQ_PUSH_LOOP:
     while (i > 1 && (ap_uint<16>)(pq_nodes[p] & PQ_PRIORITY_MASK) >= priority) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=4
-//#pragma HLS PIPELINE
+#pragma HLS PIPELINE
 //#pragma HLS UNROLL factor=2
         pq_nodes[i] = pq_nodes[p];
         i = p;
@@ -609,7 +605,7 @@ void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<12> *pq_le
     PQ_POP_LOOP:
     while (1) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=4
-//#pragma HLS PIPELINE
+#pragma HLS PIPELINE
 //#pragma HLS UNROLL factor=2
         ap_uint<12> c1 = i << 1;       // i.e., 2 * i;     // 左の子
         ap_uint<12> c2 = (i << 1) + 1; // i.e., 2 * i + 1; // 右の子
