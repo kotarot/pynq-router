@@ -1,4 +1,5 @@
 #Shell Files
+These files are for command execution on multiple servers.
 
 ##USAGE
 1. Put server list in server.txt
