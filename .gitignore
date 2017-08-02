@@ -1,22 +1,22 @@
+# General files
+!.gitignore
+!.gitkeep
 .DS_Store
 tags
 *~
 *.swp
 .*
 ~*
-!.gitignore
-!.gitkeep
+!README.txt
+*.original
+*.zip
 
 # Object files
 *.o
 
 # Problem files
 *.txt
-!NL_Q00.txt
 !issue*
-!README.txt
-*.original
-*.zip
 
 # Executables
 *.exe
