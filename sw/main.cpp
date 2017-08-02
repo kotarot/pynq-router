@@ -26,7 +26,17 @@ int main(int argc, char *argv[]) {
 
     // 指定されてればコマンドラインから問題文字列を読み込む
     if (1 < argc) {
-        strcpy(boardstr, argv[1]);
+        //先頭がXではないならば標準入力から読み込む
+        if(argv[1][0]!='X')
+        {
+            char* c_p=fgets(boardstr, BOARDSTR_SIZE, stdin);
+            int length=strlen(c_p);
+            boardstr[length-1]=0;
+        }
+        else
+        {
+            strcpy(boardstr, argv[1]);
+        }
     }
 
     // 指定されてればシード値を読み込む
