@@ -102,7 +102,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
     // ‹ó”’
     for (ap_uint<16> i = 0; i < (ap_uint<16>)(MAX_CELLS); i++) {
-        boardstr[i] = boardstr[i] + 1;
+        boardstr[i] = boardstr[i] + seed;
     }
 
     *status = 0;
