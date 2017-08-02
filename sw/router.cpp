@@ -339,7 +339,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         for (ap_uint<7> y = 0; y < (ap_uint<7>)(size_y); y++) {
 #pragma HLS LOOP_TRIPCOUNT min=4 max=72 avg=20
             for (ap_uint<7> x = 0; x < (ap_uint<7>)(size_x); x++) {
-#pragma HLS LOOP_TRIPCOUNT min=4 max=72 avg=4
+#pragma HLS LOOP_TRIPCOUNT min=4 max=72 avg=20
                 ap_uint<16> cell_id = (((ap_uint<16>)x * MAX_WIDTH + (ap_uint<16>)y) << BITWIDTH_Z) | (ap_uint<16>)z;
                 boardstr[i] = boardmat[cell_id];
                 i++;
