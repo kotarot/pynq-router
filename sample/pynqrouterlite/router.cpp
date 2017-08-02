@@ -74,6 +74,7 @@ static ap_uint<7> line_num = 0; // ƒ‰ƒCƒ“‚Ì‘”
 
 bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *status) {
 #pragma HLS INTERFACE s_axilite port=boardstr bundle=AXI4LS
+#pragma HLS INTERFACE s_axilite port=seed bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=status bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=return bundle=AXI4LS
 
