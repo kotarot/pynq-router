@@ -63,7 +63,6 @@ int main(int argc, char *argv[]) {
     cout << "SOLUTION" << endl;
     cout << "========" << endl;
     cout << "SIZE " << size_x << "X" << size_y << "X" << size_z << endl;
-    int i = 0;
     for (int z = 0; z < size_z; z++) {
         cout << "LAYER " << (z + 1) << endl;
         for (int y = 0; y < size_y; y++) {
@@ -71,8 +70,8 @@ int main(int argc, char *argv[]) {
                 if (x != 0) {
                     cout << ",";
                 }
+                int i = ((x * MAX_WIDTH + y) << BITWIDTH_Z) | z;
                 cout << setfill('0') << setw(2) << right << (int)(boardstr[i]);
-                i++;
             }
             cout << endl;
         }

@@ -95,10 +95,6 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     bool adjacents[MAX_LINES];              // スタートとゴールが隣接しているライン
 #pragma HLS ARRAY_PARTITION variable=adjacents complete dim=1
 
-#ifdef SOFTWARE
-    ap_int<9> boardmat[MAX_CELLS];          // ボードマトリックス
-#endif
-
     // ================================
     // 初期化 BEGIN
     // ================================
@@ -314,39 +310,24 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     // ================================
     // 解生成 BEGIN
     // ================================
-#ifdef SOFTWARE
+
     // 空白
     for (ap_uint<16> i = 0; i < (ap_uint<16>)(MAX_CELLS); i++) {
-        boardmat[i] = 0;
+        boardstr[i] = 0;
     }
     // ライン
     // このソルバでのラインIDを+1して表示する
     // なぜなら空白を 0 で表すことにするからラインIDは 1 以上にしたい
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
-        boardmat[starts[i]] = (i + 1);
-        boardmat[goals[i]]  = (i + 1);
+        boardstr[starts[i]] = (i + 1);
+        boardstr[goals[i]]  = (i + 1);
         for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
-            boardmat[paths[i][j]] = (i + 1);
+            boardstr[paths[i][j]] = (i + 1);
         }
     }
 
-    // boardmat を文字列化 (ただし、表示できる文字とは限らない)
-    ap_uint<16> i = 0;
-    for (ap_uint<4> z = 0; z < (ap_uint<4>)(size_z); z++) {
-#pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=4
-        for (ap_uint<7> y = 0; y < (ap_uint<7>)(size_y); y++) {
-#pragma HLS LOOP_TRIPCOUNT min=4 max=72 avg=20
-            for (ap_uint<7> x = 0; x < (ap_uint<7>)(size_x); x++) {
-#pragma HLS LOOP_TRIPCOUNT min=4 max=72 avg=20
-                ap_uint<16> cell_id = (((ap_uint<16>)x * MAX_WIDTH + (ap_uint<16>)y) << BITWIDTH_Z) | (ap_uint<16>)z;
-                boardstr[i] = boardmat[cell_id];
-                i++;
-            }
-        }
-    }
-#endif
     // ================================
     // 解生成 END
     // ================================
