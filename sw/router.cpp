@@ -603,6 +603,7 @@ void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<12> *pq_le
             break;
         }
         pq_nodes[i] = pq_nodes[t];
+        pq_nodes[t] = pq_nodes[*pq_len]; // この行は，あったほうがヒープは正確になるけどハードウェアは遅くなる
         i = t;
     }
     pq_nodes[i] = pq_nodes[*pq_len];
