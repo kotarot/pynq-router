@@ -100,10 +100,18 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     // Lite î≈
     // ================================
 
-    // ãÛîí
     for (ap_uint<16> i = 0; i < (ap_uint<16>)(MAX_CELLS); i++) {
         boardstr[i] = boardstr[i] + seed;
     }
+    // MMIO í≤ç∏óp
+    boardstr[0] += (32 + 0);
+    boardstr[1] += (32 + 1);
+    boardstr[2] += (32 + 2);
+    boardstr[3] += (32 + 3);
+    boardstr[MAX_CELLS - 4] += (64 + 0);
+    boardstr[MAX_CELLS - 3] += (64 + 1);
+    boardstr[MAX_CELLS - 2] += (64 + 2);
+    boardstr[MAX_CELLS - 1] += (64 + 3);
 
     *status = 0;
     return true;
