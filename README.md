@@ -12,6 +12,12 @@
 * matplotlib 2.0.2 (for NLGenerator)
 
 
+## Setups
+
+To setup the Raspberry Pi and PYNQs,
+see [wiki](https://github.com/kotarot/pynq-router/wiki) pages.
+
+
 ## Usage
 
 ### ランダム問題生成
