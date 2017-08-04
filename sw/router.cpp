@@ -81,20 +81,20 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     *status = -127;
 
     ap_uint<16> starts[MAX_LINES];          // ラインのスタートリスト
-#pragma HLS ARRAY_PARTITION variable=starts complete dim=1
+//#pragma HLS ARRAY_PARTITION variable=starts complete dim=1
     ap_uint<16> goals[MAX_LINES];           // ラインのゴールリスト
-#pragma HLS ARRAY_PARTITION variable=goals complete dim=1
+//#pragma HLS ARRAY_PARTITION variable=goals complete dim=1
 
     ap_uint<8> weights[MAX_CELLS];          // セルの重み
 //#pragma HLS ARRAY_PARTITION variable=weights cyclic factor=8 dim=1 partition
 // Note: weights は様々な順番でアクセスされるからパーティションしても全然効果ない
 
     ap_uint<8> paths_size[MAX_LINES];       // ラインが対応するセルIDのサイズ
-#pragma HLS ARRAY_PARTITION variable=paths_size complete dim=1
+//#pragma HLS ARRAY_PARTITION variable=paths_size complete dim=1
     ap_uint<16> paths[MAX_LINES][MAX_PATH]; // ラインが対応するセルIDの集合 (スタートとゴールは除く)
 #pragma HLS ARRAY_PARTITION variable=paths cyclic factor=16 dim=2 partition
     bool adjacents[MAX_LINES];              // スタートとゴールが隣接しているライン
-#pragma HLS ARRAY_PARTITION variable=adjacents complete dim=1
+//#pragma HLS ARRAY_PARTITION variable=adjacents complete dim=1
 
     // ================================
     // 初期化 BEGIN
@@ -114,60 +114,50 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     }
 
     // ボードストリングの解釈
+
+    size_x = (boardstr[1] - '0') * 10 + (boardstr[2] - '0');
+    size_y = (boardstr[4] - '0') * 10 + (boardstr[5] - '0');
+    size_z = (boardstr[7] - '0');
+
     INIT_BOARDS:
-    for (ap_uint<16> idx = 0; idx < BOARDSTR_SIZE; ) {
-#pragma HLS LOOP_TRIPCOUNT min=100 max=32768 avg=1000
+    for (ap_uint<16> idx = 8; idx < BOARDSTR_SIZE; idx+=11) {
+//#pragma HLS LOOP_TRIPCOUNT min=100 max=32768 avg=1000
 
-        if (boardstr[idx] == 'X') {
-            size_x = (boardstr[idx+1] - '0') * 10 + (boardstr[idx+2] - '0');
-            idx += 3;
-        }
-        else if (boardstr[idx] == 'Y') {
-            size_y = (boardstr[idx+1] - '0') * 10 + (boardstr[idx+2] - '0');
-            idx += 3;
-        }
-        else if (boardstr[idx] == 'Z') {
-            size_z = boardstr[idx+1] - '0';
-            idx += 2;
-        }
-        else if (boardstr[idx] == 'L') {
-            ap_uint<7> s_x = (boardstr[idx+1] - '0') * 10 + (boardstr[idx+2] - '0');
-            ap_uint<7> s_y = (boardstr[idx+3] - '0') * 10 + (boardstr[idx+4] - '0');
-            ap_uint<3> s_z = (boardstr[idx+5] - '0') - 1;
-            ap_uint<7> g_x = (boardstr[idx+6] - '0') * 10 + (boardstr[idx+7] - '0');
-            ap_uint<7> g_y = (boardstr[idx+8] - '0') * 10 + (boardstr[idx+9] - '0');
-            ap_uint<3> g_z = (boardstr[idx+10] - '0') - 1;
-            //cout << "L " << line_num << ": (" << s_x << ", " << s_y << ", " << s_z << ") "
-            //                              "(" << g_x << ", " << g_y << ", " << g_z << ")" << endl;
-            idx += 11;
+    	// 終端 (null) 文字
+    	if (boardstr[idx] == 0) {
+    	    break;
+    	}
 
-            // スタートとゴール
-            ap_uint<16> start_id = (((ap_uint<16>)s_x * MAX_WIDTH + (ap_uint<16>)s_y) << BITWIDTH_Z) | (ap_uint<16>)s_z;
-            ap_uint<16> goal_id  = (((ap_uint<16>)g_x * MAX_WIDTH + (ap_uint<16>)g_y) << BITWIDTH_Z) | (ap_uint<16>)g_z;
-            starts[line_num] = start_id;
-            goals[line_num]  = goal_id;
+        ap_uint<7> s_x = (boardstr[idx+1] - '0') * 10 + (boardstr[idx+2] - '0');
+        ap_uint<7> s_y = (boardstr[idx+3] - '0') * 10 + (boardstr[idx+4] - '0');
+        ap_uint<3> s_z = (boardstr[idx+5] - '0') - 1;
+        ap_uint<7> g_x = (boardstr[idx+6] - '0') * 10 + (boardstr[idx+7] - '0');
+        ap_uint<7> g_y = (boardstr[idx+8] - '0') * 10 + (boardstr[idx+9] - '0');
+        ap_uint<3> g_z = (boardstr[idx+10] - '0') - 1;
+        //cout << "L " << line_num << ": (" << s_x << ", " << s_y << ", " << s_z << ") "
+        //                              "(" << g_x << ", " << g_y << ", " << g_z << ")" << endl;
 
-            // 初期状態で数字が隣接しているか判断
-            ap_int<8> dx = (ap_int<8>)g_x - (ap_int<8>)s_x; // 最小-71 最大71 (-> 符号付き8ビット)
-            ap_int<8> dy = (ap_int<8>)g_y - (ap_int<8>)s_y; // 最小-71 最大71 (-> 符号付き8ビット)
-            ap_int<4> dz = (ap_int<4>)g_z - (ap_int<4>)s_z; // 最小-7  最大7  (-> 符号付き4ビット)
-            if ((dx == 0 && dy == 0 && (dz == 1 || dz == -1)) || (dx == 0 && (dy == 1 || dy == -1) && dz == 0) || ((dx == 1 || dx == -1) && dy == 0 && dz == 0)) {
-                adjacents[line_num] = true;
-            } else {
-                adjacents[line_num] = false;
-            }
+        // スタートとゴール
+        ap_uint<16> start_id = (((ap_uint<16>)s_x * MAX_WIDTH + (ap_uint<16>)s_y) << BITWIDTH_Z) | (ap_uint<16>)s_z;
+        ap_uint<16> goal_id  = (((ap_uint<16>)g_x * MAX_WIDTH + (ap_uint<16>)g_y) << BITWIDTH_Z) | (ap_uint<16>)g_z;
+        starts[line_num] = start_id;
+        goals[line_num]  = goal_id;
 
-            paths_size[line_num] = 0;
-            weights[start_id] = MAX_WEIGHT;
-            weights[goal_id]  = MAX_WEIGHT;
-
-            line_num++;
+        // 初期状態で数字が隣接しているか判断
+        ap_int<8> dx = (ap_int<8>)g_x - (ap_int<8>)s_x; // 最小-71 最大71 (-> 符号付き8ビット)
+        ap_int<8> dy = (ap_int<8>)g_y - (ap_int<8>)s_y; // 最小-71 最大71 (-> 符号付き8ビット)
+        ap_int<4> dz = (ap_int<4>)g_z - (ap_int<4>)s_z; // 最小-7  最大7  (-> 符号付き4ビット)
+        if ((dx == 0 && dy == 0 && (dz == 1 || dz == -1)) || (dx == 0 && (dy == 1 || dy == -1) && dz == 0) || ((dx == 1 || dx == -1) && dy == 0 && dz == 0)) {
+            adjacents[line_num] = true;
+        } else {
+            adjacents[line_num] = false;
         }
 
-        // 終端 (null) 文字
-        if (boardstr[idx] == 0) {
-            break;
-        }
+        paths_size[line_num] = 0;
+        weights[start_id] = MAX_WEIGHT;
+        weights[goal_id]  = MAX_WEIGHT;
+
+        line_num++;
     }
     //cout << size_x << " " << size_y << " " << size_z << endl;
 
@@ -279,7 +269,8 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
                 OVERLAP_CHECK_PATH:
                 for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
-#pragma HLS PIPELINE rewind II=33
+//#pragma HLS PIPELINE rewind II=33
+#pragma HLS PIPELINE rewind II=34
 #pragma HLS UNROLL factor=16
                     ap_uint<16> cell_id = paths[i][j];
                     if (overlap_checks[cell_id] == 1) {
@@ -561,7 +552,7 @@ void pq_push(ap_uint<16> priority, ap_uint<16> data, ap_uint<12> *pq_len, ap_uin
     PQ_PUSH_LOOP:
     while (i > 1 && (ap_uint<16>)(pq_nodes[p] & PQ_PRIORITY_MASK) >= priority) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=4
-#pragma HLS PIPELINE
+//#pragma HLS PIPELINE
 //#pragma HLS UNROLL factor=2
         pq_nodes[i] = pq_nodes[p];
         i = p;
@@ -587,7 +578,7 @@ void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<12> *pq_le
     PQ_POP_LOOP:
     while (1) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=4
-#pragma HLS PIPELINE
+//#pragma HLS PIPELINE
 //#pragma HLS UNROLL factor=2
         ap_uint<12> c1 = i << 1;       // i.e., 2 * i;     // 左の子
         ap_uint<12> c2 = (i << 1) + 1; // i.e., 2 * i + 1; // 右の子
