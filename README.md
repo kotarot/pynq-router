@@ -17,6 +17,13 @@
 To setup the Raspberry Pi and PYNQs,
 see [wiki](https://github.com/kotarot/pynq-router/wiki) pages.
 
+各 PYNQ のホームディレクトリに次のように `solver` ディレクトリを作成しておく。
+
+```
+cd /home/xilinx
+mkdir solver
+```
+
 
 ## Usage
 
