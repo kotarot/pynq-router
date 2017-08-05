@@ -64,6 +64,11 @@ python gen_boardstr.py ../NLGenerator/Q-10x10x4_20_50.txt
 TODO
 
 
+## Our other works
+
+* [nl-solver](https://github.com/kotarot/nl-solver)
+
+
 ## License
 
 This software is released under GPL v3 License, see [LICENSE](/LICENSE).
