@@ -11,11 +11,15 @@ Vivado HLS 用 pynq-router
 高位合成オプション:
 * Part: xc7z020clg400-1
 * Clock Period: 10.0 ns
-* Clock Uncertainty: デフォルト
+* Clock Uncertainty: 3.5 ns // 2017/08/04
 
 論理合成のオプション:
 * Synthesis strategy: --
 * Implementation strategy: --
+
+最適化記録：
+* 2017/08/04: Estimated clock: 6.38, Max latency: 1,692,438,002(1.00) (クリティカルパス遅延の最適化) 
+* 2017/08/05: Estimated clock: 6.38, Max latency: 1,556,238,748(0.92) (キューpop処理の動作改善) 
 
 
 ## 入出力

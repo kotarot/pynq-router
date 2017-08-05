@@ -547,7 +547,7 @@ void pq_push(ap_uint<16> priority, ap_uint<16> data, ap_uint<12> *pq_len, ap_uin
 #pragma HLS INLINE
 
     (*pq_len)++;
-    ap_uint<12> i = *pq_len;
+    ap_uint<12> i = (*pq_len);      // target
     ap_uint<12> p = (*pq_len) >> 1; // i.e., (*pq_len) / 2; // 親
     PQ_PUSH_LOOP:
     while (i > 1 && (ap_uint<16>)(pq_nodes[p] & PQ_PRIORITY_MASK) >= priority) {
@@ -572,33 +572,47 @@ void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<12> *pq_le
     *ret_priority = (ap_uint<16>)(pq_nodes[1] & PQ_PRIORITY_MASK);
     *ret_data     = (ap_uint<16>)(pq_nodes[1] >> PQ_PRIORITY_WIDTH);
 
-    pq_nodes[1] = pq_nodes[*pq_len];
-    ap_uint<12> i = 1;
-    ap_uint<12> t = 1;
+    //pq_nodes[1] = pq_nodes[*pq_len];
+    ap_uint<12> i = 1; // 親ノード
+    //ap_uint<12> t = 1; // 交換対象ノード
+
+    ap_uint<16> last_priority = (ap_uint<16>)(pq_nodes[*pq_len] & PQ_PRIORITY_MASK); // 末尾ノードの優先度
+
     PQ_POP_LOOP:
     while (1) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=4
 //#pragma HLS PIPELINE
 //#pragma HLS UNROLL factor=2
-        ap_uint<12> c1 = i << 1;       // i.e., 2 * i;     // 左の子
-        ap_uint<12> c2 = (i << 1) + 1; // i.e., 2 * i + 1; // 右の子
-        // 左の子
-        if (c1 < *pq_len && (ap_uint<16>)(pq_nodes[c1] & PQ_PRIORITY_MASK) <= (ap_uint<16>)(pq_nodes[t] & PQ_PRIORITY_MASK)) {
-            t = c1;
+        ap_uint<12> c1 = i << 1; // i.e., 2 * i;     // 左の子
+        ap_uint<12> c2 = c1 + 1; // i.e., 2 * i + 1; // 右の子
+        if (c1 < *pq_len && (ap_uint<16>)(pq_nodes[c1] & PQ_PRIORITY_MASK) <= last_priority) {
+            if (c2 < *pq_len && (ap_uint<16>)(pq_nodes[c2] & PQ_PRIORITY_MASK) <= (ap_uint<16>)(pq_nodes[c1] & PQ_PRIORITY_MASK)) {
+                pq_nodes[i] = pq_nodes[c2];
+                i = c2;
+            }
+            else {
+                pq_nodes[i] = pq_nodes[c1];
+                i = c1;
+            }
         }
-        // 右の子
-        if (c2 < *pq_len && (ap_uint<16>)(pq_nodes[c2] & PQ_PRIORITY_MASK) <= (ap_uint<16>)(pq_nodes[t] & PQ_PRIORITY_MASK)) {
-            t = c2;
+        else {
+            if (c2 < *pq_len && (ap_uint<16>)(pq_nodes[c2] & PQ_PRIORITY_MASK) <= last_priority) {
+                pq_nodes[i] = pq_nodes[c2];
+                i = c2;
+            }
+            else {
+                break;
+            }
         }
-        if (t == i) {
-            break;
-        }
-        pq_nodes[i] = pq_nodes[t];
-        pq_nodes[t] = pq_nodes[*pq_len]; // この行は，あったほうがヒープは正確になるけどハードウェアは遅くなる
-        i = t;
     }
     pq_nodes[i] = pq_nodes[*pq_len];
     (*pq_len)--;
+
+// For verification
+    //for (int k = 1;k<(*pq_len);k++){
+    //    cout << (ap_uint<16>)(pq_nodes[k] & PQ_PRIORITY_MASK) << " ";
+    //}
+    //cout << endl;
 }
 
 #ifdef SOFTWARE
