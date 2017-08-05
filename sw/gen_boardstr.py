@@ -2,7 +2,9 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import os, sys
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../solver')
 import BoardStr
 
 def main():
