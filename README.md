@@ -58,6 +58,24 @@ python gen_boardstr.py ../NLGenerator/Q-10x10x4_20_50.txt
 ./sim X10Y10Z4L0808101044L0801408012L0301400053L0907200034L0909108061L0107401033L0108103081L0608206071L0300106003L0506105053L0006301051L0101402081L0000300022L0109402094L0908109051L0102101031L0200303033L0802209042L0707405064
 ```
 
+### PYNQ (FPGA) 上で実行する
+
+まず、Vivado HLS 2016.1 で
+`sw/router.cpp` と `sw/router.hpp` をソースファイル、
+`sw/main.cpp` をテストベンチとして高位合成して、pynqrouter IP を作成する。
+
+次に、Vivado 2016.1 で pynqrouter IP を接続して論理合成する。
+`pynqrouter.tcl` と `pynqrouter.bit` を生成する。
+
+`pynqrouter.tcl` と `pynqrouter.bit` を PYNQ 上の
+`/home/xilinx/pynq/bitstream` 内にコピーする。
+
+PYNQ 上で次のコマンドでソルバ実行する。
+
+```
+TODO
+```
+
 
 ## Publications
 

@@ -22,8 +22,6 @@ tags
 *.exe
 *.stackdump
 *.out
-solver
-viewer
 sim
 
 # Python files
