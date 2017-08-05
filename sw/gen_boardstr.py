@@ -5,8 +5,7 @@ import argparse
 
 import BoardStr
 
-if __name__ == '__main__':
-
+def main():
     parser = argparse.ArgumentParser(description='gen_boardstr')
     parser.add_argument('input', nargs=None, default=None, type=str,
         help='Path to input problem file')
@@ -21,3 +20,7 @@ if __name__ == '__main__':
 
     # 表示
     print(boardstr)
+
+
+if __name__ == '__main__':
+    main()
