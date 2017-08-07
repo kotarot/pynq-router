@@ -11,6 +11,7 @@ from pynq import MMIO
 
 import argparse
 import sys
+import time
 
 import BoardStr
 
@@ -77,6 +78,7 @@ def main():
     # ap_start (0 番地の 1 ビット目 = 1)
     mmio.write(0, 1)
     print('Start!')
+    time_start = time.time()
 
     # ap_done (0 番地の 2 ビット目 = 2) が立つまで待ってもいいが
     #   done は一瞬だけ立つだけのことがあるから
@@ -88,6 +90,9 @@ def main():
     # 完了の確認
     print('control =', mmio.read(0))
     print('Done!')
+    time_done = time.time()
+    elapsed = time_done - time_start
+    print('elapsed =', elapsed)
 
     # 出力
     omem = []
