@@ -385,7 +385,7 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
     // ゴールの座標
     ap_uint<13> goal_xy = (ap_uint<13>)(goal >> BITWIDTH_Z);
     ap_uint<7> goal_x = (ap_uint<7>)(goal_xy / MAX_WIDTH);
-    ap_uint<7> goal_y = (ap_uint<7>)(goal_xy % MAX_WIDTH);
+    ap_uint<7> goal_y = (ap_uint<7>)(goal_xy - goal_x * MAX_WIDTH);
     ap_uint<3> goal_z = (ap_uint<3>)(goal & BITMASK_Z);
 #endif
 
@@ -397,6 +397,7 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 
     SEARCH_PQ:
     while (0 < pq_len) {
+#pragma HLS LOOP_FLATTEN off
 #pragma HLS LOOP_TRIPCOUNT min=1 max=1000 avg=100
 
         ap_uint<16> prov_cost;
@@ -429,10 +430,72 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
         // (1) ノードIDから3次元座標をマスクして抜き出す
         ap_uint<13> src_xy = (ap_uint<13>)(src >> BITWIDTH_Z);
         ap_uint<7> src_x = (ap_uint<7>)(src_xy / MAX_WIDTH);
-        ap_uint<7> src_y = (ap_uint<7>)(src_xy % MAX_WIDTH);
+        ap_uint<7> src_y = (ap_uint<7>)(src_xy - src_x * MAX_WIDTH);
         ap_uint<3> src_z = (ap_uint<3>)(src & BITMASK_Z);
         //cout << src << " " << src_x << " " << src_y << " " << src_z << endl;
-        // (2) 3次元座標で隣接するノード (6個) を調べる
+        // (2) 3次元座標で隣接するノード (6個) を調べる // 手動ループ展開
+        if (src_x > 0) { // x-を調査
+            ap_uint<16> dest = (((ap_uint<16>)(src_x-1) * MAX_WIDTH + (ap_uint<16>)(src_y)) << BITWIDTH_Z) | (ap_uint<16>)(src_z);
+            ap_uint<16> dist_new = dist_src + cost;
+            if (dist[dest] > dist_new) {
+                dist[dest] = dist_new; // distの更新
+                prev[dest] = src; // 前の頂点を記録
+                dist_new += abs_uint7(src_x-1, goal_x) + abs_uint7(src_y, goal_y) + abs_uint3(src_z, goal_z); // A* ヒューリスティック
+                pq_push(dist_new, dest, &pq_len, pq_nodes); // キューに新たな仮の距離の情報をpush
+            }
+        }
+        if (src_x < (size_x-1)) { // x+を調査
+            ap_uint<16> dest = (((ap_uint<16>)(src_x+1) * MAX_WIDTH + (ap_uint<16>)(src_y)) << BITWIDTH_Z) | (ap_uint<16>)(src_z);
+            ap_uint<16> dist_new = dist_src + cost;
+            if (dist[dest] > dist_new) {
+                dist[dest] = dist_new; // distの更新
+                prev[dest] = src; // 前の頂点を記録
+                dist_new += abs_uint7(src_x+1, goal_x) + abs_uint7(src_y, goal_y) + abs_uint3(src_z, goal_z); // A* ヒューリスティック
+                pq_push(dist_new, dest, &pq_len, pq_nodes); // キューに新たな仮の距離の情報をpush
+            }
+        }
+        if (src_y > 0) { // y-を調査
+            ap_uint<16> dest = (((ap_uint<16>)(src_x) * MAX_WIDTH + (ap_uint<16>)(src_y-1)) << BITWIDTH_Z) | (ap_uint<16>)(src_z);
+            ap_uint<16> dist_new = dist_src + cost;
+            if (dist[dest] > dist_new) {
+                dist[dest] = dist_new; // distの更新
+                prev[dest] = src; // 前の頂点を記録
+                dist_new += abs_uint7(src_x, goal_x) + abs_uint7(src_y-1, goal_y) + abs_uint3(src_z, goal_z); // A* ヒューリスティック
+                pq_push(dist_new, dest, &pq_len, pq_nodes); // キューに新たな仮の距離の情報をpush
+            }
+        }
+        if (src_y < (size_y-1)) { // y+を調査
+            ap_uint<16> dest = (((ap_uint<16>)(src_x) * MAX_WIDTH + (ap_uint<16>)(src_y+1)) << BITWIDTH_Z) | (ap_uint<16>)(src_z);
+            ap_uint<16> dist_new = dist_src + cost;
+            if (dist[dest] > dist_new) {
+                dist[dest] = dist_new; // distの更新
+                prev[dest] = src; // 前の頂点を記録
+                dist_new += abs_uint7(src_x, goal_x) + abs_uint7(src_y+1, goal_y) + abs_uint3(src_z, goal_z); // A* ヒューリスティック
+                pq_push(dist_new, dest, &pq_len, pq_nodes); // キューに新たな仮の距離の情報をpush
+            }
+        }
+        if (src_z > 0) { // z-を調査
+            ap_uint<16> dest = (((ap_uint<16>)(src_x) * MAX_WIDTH + (ap_uint<16>)(src_y)) << BITWIDTH_Z) | (ap_uint<16>)(src_z-1);
+            ap_uint<16> dist_new = dist_src + cost;
+            if (dist[dest] > dist_new) {
+                dist[dest] = dist_new; // distの更新
+                prev[dest] = src; // 前の頂点を記録
+                dist_new += abs_uint7(src_x, goal_x) + abs_uint7(src_y, goal_y) + abs_uint3(src_z-1, goal_z); // A* ヒューリスティック
+                pq_push(dist_new, dest, &pq_len, pq_nodes); // キューに新たな仮の距離の情報をpush
+            }
+        }
+        if (src_z < (size_z-1)) { // y+を調査
+            ap_uint<16> dest = (((ap_uint<16>)(src_x) * MAX_WIDTH + (ap_uint<16>)(src_y)) << BITWIDTH_Z) | (ap_uint<16>)(src_z+1);
+            ap_uint<16> dist_new = dist_src + cost;
+            if (dist[dest] > dist_new) {
+                dist[dest] = dist_new; // distの更新
+                prev[dest] = src; // 前の頂点を記録
+                dist_new += abs_uint7(src_x, goal_x) + abs_uint7(src_y, goal_y) + abs_uint3(src_z+1, goal_z); // A* ヒューリスティック
+                pq_push(dist_new, dest, &pq_len, pq_nodes); // キューに新たな仮の距離の情報をpush
+            }
+        }
+
+/***********************************************************
         SEARCH_ADJACENTS:
         for (ap_uint<3> a = 0; a < 6; a++) {
 //#pragma HLS PIPELINE
@@ -473,11 +536,12 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 #endif
             }
         }
+***********************************************************/
     }
 
     // 経路を出力
     // ゴールからスタートへの順番で表示される (ゴールとスタートは含まれない)
-    ap_uint<16> t = goal;
+    ap_uint<16> t = prev[goal];
 
 #ifdef DEBUG_PRINT
     int dbg_start_xy = start >> BITWIDTH_Z;
@@ -497,9 +561,9 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
     // バックトラック
     ap_uint<8> p = 0;
     SEARCH_BACKTRACK:
-    while (1) {
+    while (t != start) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
-#pragma HLS PIPELINE rewind II=2
+#pragma HLS PIPELINE II=2
 
 #ifdef DEBUG_PRINT
         int t_xy = prev[t] >> BITWIDTH_Z;
@@ -509,13 +573,10 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
         cout << "  via " << "(" << t_x << ", " << t_y << ", " << t_z << ") #" << prev[t] << " dist=" << dist[t] << endl;
 #endif
 
-        t = prev[t];
-        if (t == start) {
-            break;
-        }
-        // マッピングへ記録
-        path[p] = t;
+        path[p] = t; // 記録
         p++;
+
+        t = prev[t]; // 次に移動
     }
     *path_size = p;
 
