@@ -142,16 +142,10 @@ def unpack(_mem):
     """
     _boards = [ 0 for _ in range(MAX_X * MAX_Y * MAX_Z) ]
     for i in range(len(_mem)):
-        _boards[4 * i    ] = (_mem[i] & (255))
-        _boards[4 * i + 1] = (_mem[i] & (255 << 8)) >> 8
-        _boards[4 * i + 2] = (_mem[i] & (255 << 16)) >> 16
-        _boards[4 * i + 3] = (_mem[i] & (255 << 24)) >> 24
-        #if _mem[i] != 0:
-        #    print(_mem[i])
-        #    print(' ', (_mem[i] & (255)))
-        #    print(' ', (_mem[i] & (255 << 8)))
-        #    print(' ', (_mem[i] & (255 << 16)))
-        #    print(' ', (_mem[i] & (255 << 24)))
+        _boards[4 * i    ] = (_mem[i])       & 255
+        _boards[4 * i + 1] = (_mem[i] >> 8)  & 255
+        _boards[4 * i + 2] = (_mem[i] >> 16) & 255
+        _boards[4 * i + 3] = (_mem[i] >> 24) & 255
     return _boards
 
 
