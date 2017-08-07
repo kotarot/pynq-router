@@ -92,7 +92,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     ap_uint<8> paths_size[MAX_LINES];       // ラインが対応するセルIDのサイズ
 //#pragma HLS ARRAY_PARTITION variable=paths_size complete dim=1
     ap_uint<16> paths[MAX_LINES][MAX_PATH]; // ラインが対応するセルIDの集合 (スタートとゴールは除く)
-#pragma HLS ARRAY_PARTITION variable=paths cyclic factor=16 dim=2 partition
+//#pragma HLS ARRAY_PARTITION variable=paths cyclic factor=16 dim=2 partition
     bool adjacents[MAX_LINES];              // スタートとゴールが隣接しているライン
 //#pragma HLS ARRAY_PARTITION variable=adjacents complete dim=1
 
@@ -149,6 +149,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         ap_int<4> dz = (ap_int<4>)g_z - (ap_int<4>)s_z; // 最小-7  最大7  (-> 符号付き4ビット)
         if ((dx == 0 && dy == 0 && (dz == 1 || dz == -1)) || (dx == 0 && (dy == 1 || dy == -1) && dz == 0) || ((dx == 1 || dx == -1) && dy == 0 && dz == 0)) {
             adjacents[line_num] = true;
+            paths_size[line_num] = 0;
         } else {
             adjacents[line_num] = false;
         }
@@ -172,10 +173,6 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     // ルーティング BEGIN
     // ================================
 
-    bool has_overlap = false;
-    ap_uint<1> overlap_checks[MAX_CELLS];
-#pragma HLS ARRAY_PARTITION variable=overlap_checks cyclic factor=16 dim=1 partition
-
     // [Step 1] 初期ルーティング
     cout << "Initial Routing" << endl;
     FIRST_ROUTING:
@@ -195,6 +192,10 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
         }
     }
+
+    ap_uint<1> overlap_checks[MAX_CELLS];
+#pragma HLS ARRAY_PARTITION variable=overlap_checks cyclic factor=16 dim=1 partition
+    bool has_overlap = false;
 
     // [Step 2] Rip-up 再ルーティング
     ROUTING:
@@ -237,7 +238,6 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
                     weights[paths[i][j]] = current_round_weight;
                 }
             }
-
         }
 
         // 経路探索
@@ -259,28 +259,28 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         }
         OVERLAP_CHECK:
         for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
+#pragma HLS LOOP_FLATTEN off
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
             overlap_checks[starts[i]] = 1;
             overlap_checks[goals[i]] = 1;
 
             // 数字が隣接する場合スキップ、そうでない場合は実行
-            if (adjacents[i] == false) {
+            //if (adjacents[i] == false) {
 
-                OVERLAP_CHECK_PATH:
-                for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
+            OVERLAP_CHECK_PATH:
+			for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
 //#pragma HLS PIPELINE rewind II=33
-#pragma HLS PIPELINE rewind II=34
-#pragma HLS UNROLL factor=16
-                    ap_uint<16> cell_id = paths[i][j];
-                    if (overlap_checks[cell_id] == 1) {
-                        has_overlap = true;
-                        break;
-                    }
-                    overlap_checks[cell_id] = 1;
+#pragma HLS PIPELINE II=17
+#pragma HLS UNROLL factor=8
+                ap_uint<16> cell_id = paths[i][j];
+                if (overlap_checks[cell_id] == 1) {
+                    has_overlap = true;
+                    break;
                 }
-
+                overlap_checks[cell_id] = 1;
             }
+            //}
         }
         // オーバーラップなければ探索終了
         if (has_overlap == false) {
@@ -304,16 +304,19 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     // ================================
 
     // 空白
+    OUTPUT_INIT:
     for (ap_uint<16> i = 0; i < (ap_uint<16>)(MAX_CELLS); i++) {
         boardstr[i] = 0;
     }
     // ライン
     // このソルバでのラインIDを+1して表示する
     // なぜなら空白を 0 で表すことにするからラインIDは 1 以上にしたい
+    OUTPUT_LINE:
     for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
         boardstr[starts[i]] = (i + 1);
         boardstr[goals[i]]  = (i + 1);
+        OUTPUT_LINE_PATH:
         for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
             boardstr[paths[i][j]] = (i + 1);
