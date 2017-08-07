@@ -27,6 +27,9 @@ Vivado HLS 用 pynq-router
 * 2017/08/07: 剰余演算の書き換え，隣接ノードの探索ループ展開
   * (3.0) Estimated clock: 6.78, Max latency: 1,423,592,713(0.85)
   * (3.5) Estimated clock: 6.38, Max latency: 1,428,235,716(0.84)
+* 2017/08/07: 高位合成パラメータの調整 
+  * (3.0) Estimated clock: 6.78, Max latency: 1,284,364,290(0.77)
+  * (3.5) Estimated clock: 6.38, Max latency: 1,289,003,291(0.76)
 
 
 ## 入出力

@@ -268,7 +268,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
             //if (adjacents[i] == false) {
 
             OVERLAP_CHECK_PATH:
-			for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
+            for (ap_uint<9> j = 0; j < (ap_uint<9>)(paths_size[i]); j++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=255 avg=50
 //#pragma HLS PIPELINE rewind II=33
 #pragma HLS PIPELINE II=17
