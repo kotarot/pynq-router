@@ -15,12 +15,24 @@ import sys
 import BoardStr
 
 
+# Settings
+IP = 'SEG_pynqrouter_0_Reg'
+OFFSET_BOARD = 65536   # 0x10000 ~ 0x1ffff
+OFFSET_SEED  = 131072  # 0x20000
+MAX_X = 72
+MAX_Y = 72
+MAX_Z = 8
+BITWIDTH_Z = 3
+
+
 def main():
     parser = argparse.ArgumentParser(description="Solver with pynqrouter")
     parser.add_argument('-i', '--input', action='store', nargs='?', default=None, type=str,
         help='Path to input problem file')
     parser.add_argument('-b', '--boardstr', action='store', nargs='?', default=None, type=str,
         help='Problem boardstr (if you want to solve directly)')
+    parser.add_argument('-s', '--seed', action='store', nargs='?', default=12345, type=int,
+        help='Random seed')
     args = parser.parse_args()
 
     if args.input is not None:
@@ -40,13 +52,10 @@ def main():
 
     print('boardstr =', boardstr)
 
-    # Settings
-    IP = 'SEG_pynqrouter_0_Reg'
-    OFFSET_BOARD = 65536   # 0x10000 ~ 0x1ffff
-    OFFSET_SEED  = 131072  # 0x20000
-    MAX_X = 72
-    MAX_Y = 72
-    MAX_Z = 8
+    # ボード文字列から X, Y, Z を読んでくる
+    size_x = (ord(boardstr[1]) - ord('0')) * 10 + (ord(boardstr[2]) - ord('0'))
+    size_y = (ord(boardstr[4]) - ord('0')) * 10 + (ord(boardstr[5]) - ord('0'))
+    size_z = (ord(boardstr[7]) - ord('0'))
 
     # Overlay 読み込み
     OL = Overlay('pynqrouter.bit')
@@ -58,11 +67,11 @@ def main():
     mmio = MMIO(int(PL.ip_dict[IP][0]), int(PL.ip_dict[IP][1]))
 
     # 入力データをセット
-    mmio.write(OFFSET_BOARD + 0, 0)
-    mmio.write(OFFSET_BOARD + 4, 4)
-    mmio.write(OFFSET_BOARD + (MAX_X * MAX_Y * MAX_Z) - 4, 0)
+    imem = pack(boardstr)
+    for i in range(len(imem)):
+        mmio.write(OFFSET_BOARD + (i * 4), imem[i])
 
-    mmio.write(OFFSET_SEED, 1)
+    mmio.write(OFFSET_SEED, args.seed)
 
     # スタート
     # ap_start (0 番地の 1 ビット目 = 1)
@@ -81,10 +90,64 @@ def main():
     print('Done!')
 
     # 出力
-    print(mmio.read(OFFSET_BOARD + 0))
-    print(mmio.read(OFFSET_BOARD + 4))
-    print(mmio.read(OFFSET_BOARD + (MAX_X * MAX_Y * MAX_Z) - 4))
-    print(mmio.read(OFFSET_BOARD + (MAX_X * MAX_Y * MAX_Z)))
+    omem = []
+    for i in range(len(imem)):
+        omem.append(mmio.read(OFFSET_BOARD + (i * 4)))
+    boards = unpack(omem)
+
+    # 表示
+    solution =  '\n'
+    solution += 'SOLUTION\n'
+    solution += '========\n'
+    solution += ('SIZE' + str(size_x) + 'X' + str(size_y) + 'X' + str(size_z) + '\n')
+    for z in range(size_z):
+        solution += ('LAYER ' + str(z + 1) + '\n')
+        for y in range(size_y):
+            for x in range(size_x):
+                if x != 0:
+                    solution += ','
+                i = ((x * MAX_X + y) << BITWIDTH_Z) | z
+                solution += '{0:0>2}'.format(boards[i])
+            solution += '\n'
+    print(solution)
+
+
+def pack(_str):
+    """
+    ボードストリング文字列をMMIOメモリにパックする
+    """
+    _mem = [ 0 for _ in range(MAX_X * MAX_Y * MAX_Z // 4) ]
+    for i in range(len(_str)):
+        _index  = i // 4;
+        _offset = i % 4;
+        if _offset == 0:
+            _mem[_index] = _mem[_index] | (ord(_str[i]))
+        elif _offset == 1:
+            _mem[_index] = _mem[_index] | (ord(_str[i]) << 8)
+        elif _offset == 2:
+            _mem[_index] = _mem[_index] | (ord(_str[i]) << 16)
+        elif _offset == 3:
+            _mem[_index] = _mem[_index] | (ord(_str[i]) << 24)
+    return _mem
+
+
+def unpack(_mem):
+    """
+    MMIOメモリからボード情報をアンパックする
+    """
+    _boards = [ 0 for _ in range(MAX_X * MAX_Y * MAX_Z) ]
+    for i in range(len(_mem)):
+        _boards[4 * i    ] = (_mem[i] & (255))
+        _boards[4 * i + 1] = (_mem[i] & (255 << 8)) >> 8
+        _boards[4 * i + 2] = (_mem[i] & (255 << 16)) >> 16
+        _boards[4 * i + 3] = (_mem[i] & (255 << 24)) >> 24
+        #if _mem[i] != 0:
+        #    print(_mem[i])
+        #    print(' ', (_mem[i] & (255)))
+        #    print(' ', (_mem[i] & (255 << 8)))
+        #    print(' ', (_mem[i] & (255 << 16)))
+        #    print(' ', (_mem[i] & (255 << 24)))
+    return _boards
 
 
 if __name__ == '__main__':
