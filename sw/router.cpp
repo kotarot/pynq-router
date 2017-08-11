@@ -437,6 +437,7 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
         ap_uint<3> src_z = (ap_uint<3>)(src & BITMASK_Z);
         //cout << src << " " << src_x << " " << src_y << " " << src_z << endl;
         // (2) 3次元座標で隣接するノード (6個) を調べる // 手動ループ展開
+/***********************************************************
         if (src_x > 0) { // x-を調査
             ap_uint<16> dest = (((ap_uint<16>)(src_x-1) * MAX_WIDTH + (ap_uint<16>)(src_y)) << BITWIDTH_Z) | (ap_uint<16>)(src_z);
             ap_uint<16> dist_new = dist_src + cost;
@@ -497,8 +498,8 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
                 pq_push(dist_new, dest, &pq_len, pq_nodes); // キューに新たな仮の距離の情報をpush
             }
         }
+***********************************************************/
 
-/***********************************************************
         SEARCH_ADJACENTS:
         for (ap_uint<3> a = 0; a < 6; a++) {
 //#pragma HLS PIPELINE
@@ -539,7 +540,6 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 #endif
             }
         }
-***********************************************************/
     }
 
     // 経路を出力
