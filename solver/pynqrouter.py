@@ -66,7 +66,9 @@ def main():
         sys.stderr.write('Specify at least "input" or "boardstr"!\n')
         sys.exit(1)
 
-    print('boardstr =', boardstr)
+    print('boardstr:')
+    print(boardstr)
+    print('')
 
     # ボード文字列から X, Y, Z を読んでくる
     size_x = (ord(boardstr[1]) - ord('0')) * 10 + (ord(boardstr[2]) - ord('0'))
@@ -103,11 +105,11 @@ def main():
         pass
 
     # 完了の確認
-    print('control =', mmio.read(0))
     print('Done!')
+    print('control:', mmio.read(0))
     time_done = time.time()
     elapsed = time_done - time_start
-    print('elapsed =', elapsed)
+    print('elapsed:', elapsed)
 
     # 出力
     omem = []
