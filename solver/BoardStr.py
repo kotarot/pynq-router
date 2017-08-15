@@ -5,7 +5,7 @@
 問題ファイルを boardstr に変換したりするクラス。
 """
 
-def conv_boardstr(lines):
+def conv_boardstr(lines, edge_start=False):
     """
     問題ファイルを boardstr に変換
     """
@@ -40,8 +40,8 @@ def conv_boardstr(lines):
             g_dist = g_dist_x + g_dist_y + g_dist_z
             #print(g_dist_x, g_dist_y, g_dist_z, g_dist)
 
-            # 端に近い方を選ぶ
-            if s_dist <= g_dist:
+            # 端に近い方をスタートにするオプションがオンのときは距離に応じて端点を選択する
+            if (not edge_start) or s_dist <= g_dist:
                 boardstr += ('L%02d%02d%d%02d%02d%d' % (int(s_str[0]), int(s_str[1]), int(s_str[2]), int(g_str[0]), int(g_str[1]), int(g_str[2])))
                 #print('S')
             else:
