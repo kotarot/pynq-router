@@ -30,10 +30,14 @@ def main():
     parser = argparse.ArgumentParser(description="Solver with pynqrouter")
     parser.add_argument('-i', '--input', action='store', nargs='?', default=None, type=str,
         help='Path to input problem file')
+    parser.add_argument('-o', '--output', action='store', nargs='?', default=None, type=str,
+        help='Path to output answer file')
     parser.add_argument('-b', '--boardstr', action='store', nargs='?', default=None, type=str,
         help='Problem boardstr (if you want to solve directly)')
     parser.add_argument('-s', '--seed', action='store', nargs='?', default=12345, type=int,
         help='Random seed')
+    parser.add_argument('-p', '--print', action='store_true', default=False,
+        help='Turn on to print the solution')
     parser.add_argument('-e', '--edge-start', action='store_true', default=False,
         help='Turn on to set farther terminals from the center as starts')
     args = parser.parse_args()
@@ -102,11 +106,8 @@ def main():
         omem.append(mmio.read(OFFSET_BOARD + (i * 4)))
     boards = unpack(omem)
 
-    # 表示
-    solution =  '\n'
-    solution += 'SOLUTION\n'
-    solution += '========\n'
-    solution += ('SIZE' + str(size_x) + 'X' + str(size_y) + 'X' + str(size_z) + '\n')
+    # 回答の生成
+    solution = ('SIZE ' + str(size_x) + 'X' + str(size_y) + 'X' + str(size_z) + '\n')
     for z in range(size_z):
         solution += ('LAYER ' + str(z + 1) + '\n')
         for y in range(size_y):
@@ -114,9 +115,18 @@ def main():
                 if x != 0:
                     solution += ','
                 i = ((x * MAX_X + y) << BITWIDTH_Z) | z
-                solution += '{0:0>2}'.format(boards[i])
+                solution += '{0:0>2}'.format(boards[i])  # 2桁の0詰め
             solution += '\n'
-    print(solution)
+
+    # 表示 & ファイル出力
+    if args.print:
+        print('')
+        print('SOLUTION')
+        print('========')
+        print(solution)
+    if args.output is not None:
+        with open(args.output, 'w') as f:
+            f.write(solution)
 
 
 def pack(_str):
