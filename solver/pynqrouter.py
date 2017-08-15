@@ -34,6 +34,8 @@ def main():
         help='Problem boardstr (if you want to solve directly)')
     parser.add_argument('-s', '--seed', action='store', nargs='?', default=12345, type=int,
         help='Random seed')
+    parser.add_argument('-e', '--edge-start', action='store_true', default=False,
+        help='Turn on to set farther terminals from the center as starts')
     args = parser.parse_args()
 
     if args.input is not None:
@@ -42,7 +44,7 @@ def main():
             lines = f.readlines()
 
         # 問題ファイルを boardstr に変換
-        boardstr = BoardStr.conv_boardstr(lines)
+        boardstr = BoardStr.conv_boardstr(lines, args.edge_start)
 
     elif args.boardstr is not None:
         boardstr = args.boardstr
