@@ -296,7 +296,7 @@ if( print_option ) {
 			board->box(now_x,now_y,now_z)->setHasLine();
 			
 			bool have_direction = false;
-			if(now_x >= 0 && ans[now_z][now_y][now_x-1] == i){
+			if(now_x > 0 && ans[now_z][now_y][now_x-1] == i){
 				if(have_direction){ // error
 					cerr << "Point (" << now_x << "," << now_y << "," << now_z+1 << ") has branch error(s)." << endl;
 					exit(-1);
@@ -306,7 +306,7 @@ if( print_option ) {
 					have_direction = true;
 				}
 			}
-			if(now_x <= board->getSizeX()-1 && ans[now_z][now_y][now_x+1] == i){
+			if(now_x < board->getSizeX()-1 && ans[now_z][now_y][now_x+1] == i){
 				if(have_direction){ // error
 					cerr << "Point (" << now_x << "," << now_y << "," << now_z+1 << ") has branch error(s)." << endl;
 					exit(-1);
@@ -316,7 +316,7 @@ if( print_option ) {
 					have_direction = true;
 				}
 			}
-			if(now_y >= 0 && ans[now_z][now_y-1][now_x] == i){
+			if(now_y > 0 && ans[now_z][now_y-1][now_x] == i){
 				if(have_direction){ // error
 					cerr << "Point (" << now_x << "," << now_y << "," << now_z+1 << ") has branch error(s)." << endl;
 					exit(-1);
@@ -326,7 +326,7 @@ if( print_option ) {
 					have_direction = true;
 				}
 			}
-			if(now_y <= board->getSizeY()-1 && ans[now_z][now_y+1][now_x] == i){
+			if(now_y < board->getSizeY()-1 && ans[now_z][now_y+1][now_x] == i){
 				if(have_direction){ // error
 					cerr << "Point (" << now_x << "," << now_y << "," << now_z+1 << ") has branch error(s)." << endl;
 					exit(-1);
@@ -336,7 +336,7 @@ if( print_option ) {
 					have_direction = true;
 				}
 			}
-			if(now_z >= 0 && ans[now_z-1][now_y][now_x] == i){
+			if(now_z > 0 && ans[now_z-1][now_y][now_x] == i){
 				if(have_direction){ // error
 					cerr << "Point (" << now_x << "," << now_y << "," << now_z+1 << ") has branch error(s)." << endl;
 					exit(-1);
@@ -346,7 +346,7 @@ if( print_option ) {
 					have_direction = true;
 				}
 			}
-			if(now_z <= board->getSizeZ()-1 && ans[now_z+1][now_y][now_x] == i){
+			if(now_z < board->getSizeZ()-1 && ans[now_z+1][now_y][now_x] == i){
 				if(have_direction){ // error
 					cerr << "Point (" << now_x << "," << now_y << "," << now_z+1 << ") has branch error(s)." << endl;
 					exit(-1);
