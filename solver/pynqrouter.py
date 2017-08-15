@@ -101,7 +101,7 @@ def main():
     #   done は一瞬だけ立つだけのことがあるから
     # ap_idle (0 番地の 3 ビット目 = 4) を待ったほうが良い
     while (mmio.read(0) & 4) == 0:
-        # 動いてるっぽく見えるようにLチカさせる
+        # TODO: 動いてるっぽく見えるようにLチカさせる
         pass
 
     # 完了の確認
@@ -110,6 +110,9 @@ def main():
     time_done = time.time()
     elapsed = time_done - time_start
     print('elapsed:', elapsed)
+
+    # TODO: 状態の取得
+    pass
 
     # 出力
     omem = []
