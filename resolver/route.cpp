@@ -26,6 +26,7 @@ bool routing(int trgt_line_id){
 	}
 	
 	queue<Search> qu;
+	int goal_cost = INT_MAX;
 
 	int start_x, start_y, start_z;
 	IntraBox* start;
@@ -248,7 +249,14 @@ bool routing(int trgt_line_id){
 		}
 		
 		if(!update) continue;
-		if(trgt_box->isTypeNumber()) continue;
+		if(trgt_box->isTypeNumber()){
+			if(trgt_box->getIndex() == trgt_line_id){
+				if(trgt_ibox->cost < goal_cost) goal_cost = trgt_ibox->cost;
+			}
+			continue;
+		}
+		
+		if(trgt_ibox->cost > goal_cost) continue; // 探索打ち切り
 		
 		// 北方向
 		if(trgt.d!=NORTH && isInserted(trgt.x,trgt.y-1,trgt.z)){
