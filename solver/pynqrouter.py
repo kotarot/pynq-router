@@ -28,18 +28,27 @@ BITWIDTH_Z = 3
 
 def main():
     parser = argparse.ArgumentParser(description="Solver with pynqrouter")
+
+    # 入出力
     parser.add_argument('-i', '--input', action='store', nargs='?', default=None, type=str,
         help='Path to input problem file')
-    parser.add_argument('-o', '--output', action='store', nargs='?', default=None, type=str,
-        help='Path to output answer file')
     parser.add_argument('-b', '--boardstr', action='store', nargs='?', default=None, type=str,
         help='Problem boardstr (if you want to solve directly)')
+    parser.add_argument('-o', '--output', action='store', nargs='?', default=None, type=str,
+        help='Path to output answer file')
+
+    # ソルバオプション
     parser.add_argument('-s', '--seed', action='store', nargs='?', default=12345, type=int,
         help='Random seed')
-    parser.add_argument('-p', '--print', action='store_true', default=False,
-        help='Turn on to print the solution')
     parser.add_argument('-e', '--edge-start', action='store_true', default=False,
-        help='Turn on to set farther terminals from the center as starts')
+        help='Enable to set farther terminals from the center as starts')
+
+    # 出力オプション
+    parser.add_argument('-p', '--print', action='store_true', default=False,
+        help='Enable to print the solution')
+    parser.add_argument('-z', '--zero-padding', action='store_true', default=False,
+        help='Enable to do zero-padding')
+
     args = parser.parse_args()
 
     if args.input is not None:
@@ -115,7 +124,10 @@ def main():
                 if x != 0:
                     solution += ','
                 i = ((x * MAX_X + y) << BITWIDTH_Z) | z
-                solution += '{0:0>2}'.format(boards[i])  # 2桁の0詰め
+                if args.zero_padding:
+                    solution += '{0:0>2}'.format(boards[i])  # 2桁の0詰め
+                else:
+                    solution += str(boards[i])               # 普通に表示
             solution += '\n'
 
     # 表示 & ファイル出力
