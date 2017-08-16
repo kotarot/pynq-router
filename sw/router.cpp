@@ -214,7 +214,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
     // [Step 2] Rip-up 再ルーティング
     ROUTING:
-    for (ap_uint<16> round = 1; round <= 4000; round++) {
+    for (ap_uint<16> round = 1; round <= 32768 /* = (2048 * 16) */; round++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=4000 avg=50
 
 //#ifdef DEBUG_PRINT
