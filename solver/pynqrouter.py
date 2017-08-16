@@ -16,7 +16,7 @@ import time
 import BoardStr
 
 
-# Settings
+# Settings -- pynqrouter
 IP = 'SEG_pynqrouter_0_Reg'
 OFFSET_BOARD  = 65536   # 0x10000 ~ 0x1ffff
 OFFSET_SEED   = 131072  # 0x20000
@@ -25,6 +25,8 @@ MAX_X = 72
 MAX_Y = 72
 MAX_Z = 8
 BITWIDTH_Z = 3
+# Settings -- LED
+IP_LED = 'SEG_axi_gpio_0_Reg'
 
 
 def main():
@@ -82,8 +84,12 @@ def main():
     print(OL.ip_dict)
     print('Overlay loaded!')
 
-    # MMIO 接続
+    # MMIO 接続 (pynqrouter)
     mmio = MMIO(int(PL.ip_dict[IP][0]), int(PL.ip_dict[IP][1]))
+
+    # MMIO 接続 & リセット (LED)
+    mmio_led = MMIO(int(PL.ip_dict[IP_LED][0]), int(PL.ip_dict[IP_LED][1]))
+    mmio_led.write(0, 0)
 
     # 入力データをセット
     imem = pack(boardstr)
@@ -101,9 +107,15 @@ def main():
     # ap_done (0 番地の 2 ビット目 = 2) が立つまで待ってもいいが
     #   done は一瞬だけ立つだけのことがあるから
     # ap_idle (0 番地の 3 ビット目 = 4) を待ったほうが良い
+    iteration = 0
     while (mmio.read(0) & 4) == 0:
-        # TODO: 動いてるっぽく見えるようにLチカさせる
-        pass
+        # 動いてるっぽく見えるようにLチカさせる
+        iteration += 1
+        if iteration == 10000:
+            mmio_led.write(0, 3)
+        elif 20000 <= iteration:
+            mmio_led.write(0, 12)
+            iteration = 0
 
     # 完了の確認
     print('Done!')
@@ -116,8 +128,13 @@ def main():
     status = int(mmio.read(OFFSET_STATUS))
     print('status:', status)
     if status != 0:
+        # 解けなかったらLEDを消す
+        mmio_led.write(0, 0)
         sys.stderr.write('Cannot solve it!\n')
         sys.exit(1)
+
+    # 解けたらLEDを全部つける
+    mmio_led.write(0, 15)
 
     # 出力
     omem = []
