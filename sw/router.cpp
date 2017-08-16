@@ -123,10 +123,10 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     for (ap_uint<16> idx = 8; idx < BOARDSTR_SIZE; idx+=11) {
 //#pragma HLS LOOP_TRIPCOUNT min=100 max=32768 avg=1000
 
-    	// 終端 (null) 文字
-    	if (boardstr[idx] == 0) {
-    	    break;
-    	}
+        // 終端 (null) 文字
+        if (boardstr[idx] == 0) {
+            break;
+        }
 
         ap_uint<7> s_x = (boardstr[idx+1] - '0') * 10 + (boardstr[idx+2] - '0');
         ap_uint<7> s_y = (boardstr[idx+3] - '0') * 10 + (boardstr[idx+4] - '0');
