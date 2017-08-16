@@ -61,8 +61,14 @@ ap_uint<32> lfsr_random() {
 // min_uint8(r, MAX_WEIGHT) と同じ
 ap_uint<8> new_weight(ap_uint<16> x) {
 #pragma HLS INLINE
-    if (x < (ap_uint<16>)MAX_WEIGHT) { return x; }
+    // 下位11ビット (最大2047) を抜き出して、1/8 をかけて最大 255 にする
+    ap_uint<8> y = x & 2047;
+    return y / 8;
+#if 0
+    ap_uint<8> y = x / 8;
+    if (y < (ap_uint<16>)MAX_WEIGHT) { return y; }
     else { return MAX_WEIGHT; }
+#endif
 }
 
 // ボードに関する変数
@@ -199,11 +205,11 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
     // [Step 2] Rip-up 再ルーティング
     ROUTING:
-    for (ap_uint<16> round = 1; round <= 4000; round++) {
+    for (ap_uint<16> round = 1; round <= 32768 /* = (2048 * 16) */; round++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=4000 avg=50
 
 //#ifdef DEBUG_PRINT
-        cout << "ROUND " << round << endl;
+        cout << "ROUND " << round;
         //show_board(line_num, paths_size, paths, starts, goals);
 //#endif
 
@@ -213,6 +219,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
         // 数字が隣接する場合スキップ、そうでない場合は実行
         if (adjacents[target] == true) {
+            cout << endl;
             continue;
         }
 
@@ -227,6 +234,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
         // (2) 重みを更新
         ap_uint<8> current_round_weight = new_weight(round);
+        cout << "  weight " << current_round_weight << endl;
         ROUTING_UPDATE:
         for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
