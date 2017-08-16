@@ -61,9 +61,14 @@ ap_uint<32> lfsr_random() {
 // min_uint8(r, MAX_WEIGHT) と同じ
 ap_uint<8> new_weight(ap_uint<16> x) {
 #pragma HLS INLINE
-    ap_uint<8> y = x / WEIGHT_FACT;
+    // 下位11ビット (最大2047) を抜き出して、1/8 をかけて最大 255 にする
+    ap_uint<8> y = x & 2047;
+    return y / 8;
+#if 0
+    ap_uint<8> y = x / 8;
     if (y < (ap_uint<16>)MAX_WEIGHT) { return y; }
     else { return MAX_WEIGHT; }
+#endif
 }
 
 // ボードに関する変数
