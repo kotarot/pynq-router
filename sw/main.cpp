@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
                     cout << ",";
                 }
                 int i = ((x * MAX_WIDTH + y) << BITWIDTH_Z) | z;
-                cout << setfill('0') << setw(2) << right << (int)(boardstr[i]);
+                cout << setfill('0') << setw(2) << right << (unsigned int)(unsigned char)(boardstr[i]);
             }
             cout << endl;
         }
