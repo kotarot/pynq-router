@@ -19,23 +19,24 @@ Vivado HLS 用 pynq-router
 
 最適化記録：
 * 2017/08/04: クリティカルパス遅延の最適化
-  * (3.0) Estimated clock: 6.78, Max latency: 1,667,151,745(1.00)
-  * (3.5) Estimated clock: 6.38, Max latency: 1,692,438,002(1.00)
+  * (3.0) Estimated clock: 6.78, Max latency: 1,667,151,745 (1.00)
+  * (3.5) Estimated clock: 6.38, Max latency: 1,692,438,002 (1.00)
 * 2017/08/05: キューpop処理の動作改善
-  * (3.0) Estimated clock: 6.78, Max latency: 1,530,952,491(0.92)
-  * (3.5) Estimated clock: 6.38, Max latency: 1,556,238,748(0.92)
+  * (3.0) Estimated clock: 6.78, Max latency: 1,530,952,491 (0.92)
+  * (3.5) Estimated clock: 6.38, Max latency: 1,556,238,748 (0.92)
 * 2017/08/07: 剰余演算の書き換え，隣接ノードの探索ループ展開
-  * (3.0) Estimated clock: 6.78, Max latency: 1,423,592,713(0.85)
-  * (3.5) Estimated clock: 6.38, Max latency: 1,428,235,716(0.84)
+  * (3.0) Estimated clock: 6.78, Max latency: 1,423,592,713 (0.85)
+  * (3.5) Estimated clock: 6.38, Max latency: 1,428,235,716 (0.84)
 * 2017/08/07: 高位合成パラメータの調整 
-  * (3.0) Estimated clock: 6.78, Max latency: 1,284,364,290(0.77)
-  * (3.5) Estimated clock: 6.38, Max latency: 1,289,003,291(0.76)
+  * (3.0) Estimated clock: 6.78, Max latency: 1,284,364,290 (0.77)
+  * (3.5) Estimated clock: 6.38, Max latency: 1,289,003,291 (0.76)
 * 2017/08/11: 隣接ノードの探索ループ展開を戻した 
-  * (3.0) Estimated clock: 6.78, Max latency: 1,329,761,290(0.80)
-  * (3.5) Estimated clock: 6.38, Max latency: 1,355,035,291(0.80)
+  * (3.0) Estimated clock: 6.78, Max latency: 1,329,761,290 (0.80)
+  * (3.5) Estimated clock: 6.38, Max latency: 1,355,035,291 (0.80)
 * 2017/08/11: starts と goals を FF パーティションした 
-  * (3.0) Estimated clock: 6.78, Max latency: 1,329,245,034(0.797)
-  * (3.5) Estimated clock: 6.45, Max latency: 1,354,519,035(0.800)
+  * (3.0) Estimated clock: 6.78, Max latency: 1,329,245,034 (0.797)
+  * (3.5) Estimated clock: 6.45, Max latency: 1,354,519,035 (0.800)
+
 
 ## 入出力
 
