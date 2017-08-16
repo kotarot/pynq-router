@@ -59,8 +59,4 @@ void search(ap_uint<8> *path_size, ap_uint<16> path[MAX_PATH], ap_uint<16> start
 void pq_push(ap_uint<16> priority, ap_uint<16> data, ap_uint<12> *pq_len, ap_uint<32> pq_nodes[MAX_PQ]);
 void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<12> *pq_len, ap_uint<32> pq_nodes[MAX_PQ]);
 
-#ifdef SOFTWARE
-void show_board(ap_uint<7> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<16> paths[MAX_LINES][MAX_PATH], ap_uint<16> starts[MAX_LINES], ap_uint<16> goals[MAX_LINES]);
-#endif
-
 #endif /* __ROUTER_HPP__ */

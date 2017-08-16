@@ -210,7 +210,6 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
 //#ifdef DEBUG_PRINT
         cout << "ROUND " << round;
-        //show_board(line_num, paths_size, paths, starts, goals);
 //#endif
 
         // 対象ラインを選択
@@ -687,37 +686,3 @@ void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<12> *pq_le
     //}
     //cout << endl;
 }
-
-#ifdef SOFTWARE
-void show_board(ap_uint<7> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<16> paths[MAX_LINES][MAX_PATH], ap_uint<16> starts[MAX_LINES], ap_uint<16> goals[MAX_LINES]) {
-    int boardmat[MAX_CELLS];
-
-    // 空白
-    for (int i = 0; i < MAX_CELLS; i++) {
-        boardmat[i] = 0;
-    }
-    // ライン
-    // このソルバでのラインIDを+1して表示する
-    // なぜなら空白を 0 で表すことにするからラインIDは 1 以上にしたい
-    for (int i = 0; i < (int)(line_num); i++) {
-        boardmat[starts[i]] = (i + 1);
-        boardmat[goals[i]]  = (i + 1);
-        for (int j = 0; j < (int)(paths_size[i]); j++) {
-            boardmat[paths[i][j]] = (i + 1);
-        }
-    }
-    for (int z = 0; z < (int)size_z; z++) {
-        cout << "LAYER " << (z + 1) << endl;
-        for (int y = 0; y < (int)size_y; y++) {
-            for (int x = 0; x < (int)size_x; x++) {
-                if (x != 0) {
-                    cout << ",";
-                }
-                int id = (int)( (((ap_uint<16>)x * MAX_WIDTH + (ap_uint<16>)y) << BITWIDTH_Z) | (ap_uint<16>)z );
-                cout << setfill('0') << setw(2) << right << (int)(boardmat[id]);
-            }
-            cout << endl;
-        }
-    }
-}
-#endif
