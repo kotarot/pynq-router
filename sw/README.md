@@ -30,15 +30,18 @@ Vivado HLS 用 pynq-router
 * 2017/08/07: 高位合成パラメータの調整 
   * (3.0) Estimated clock: 6.78, Max latency: 1,284,364,290 (0.77)
   * (3.5) Estimated clock: 6.38, Max latency: 1,289,003,291 (0.76)
-* 2017/08/11: 隣接ノードの探索ループ展開を戻した (そうしないと論理合成でタイミング満たさない)
+* 2017/08/11: 隣接ノードの探索ループ展開を戻した (そうしないと論理合成・配置配線でタイミング満たさない)
   * (3.0) Estimated clock: 6.78, Max latency: 1,329,761,290 (0.80)
   * (3.5) Estimated clock: 6.38, Max latency: 1,355,035,291 (0.80)
-* 2017/08/11: starts と goals を FF パーティションした 
+* 2017/08/11: starts と goals を FF パーティションした
   * (3.0) Estimated clock: 6.78, Max latency: 1,329,245,034 (0.797)
   * (3.5) Estimated clock: 6.45, Max latency: 1,354,519,035 (0.800)
 * 2017/08/16: MAX_LINES を 256 に増やした
   * (3.0) Estimated clock: 6.78, Max latency: 1,905,588,970 (1.143)
   * (3.5) Estimated clock: 6.38, Max latency: 1,933,166,972 (1.142)
+* 2017/08/16: MAX_LINES を 128 に戻した (そうしないと論理合成・配置配線でタイミング満たさない)
+  * (3.0) Estimated clock: 6.78, Max latency: 1,329,245,034 (0.797)
+  * (3.5) Estimated clock: 6.45, Max latency: 1,354,519,035 (0.800)
 
 
 ## 入出力

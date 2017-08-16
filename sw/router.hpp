@@ -29,7 +29,7 @@ using namespace std;
 #define BITMASK_Z   7       // 0000 0000 0000 0111
 
 #define MAX_CELLS  41472    // セルの総数 =72*72*8 (16ビットで収まる)
-#define MAX_LINES  256      // ライン数の最大値 (8ビット)
+#define MAX_LINES  128      // ライン数の最大値 (7ビット)
 #define MAX_PATH   256      // 1つのラインが対応するセル数の最大値 (8ビット)
 #define MAX_PQ     4096     // 探索時のプライオリティ・キューの最大サイズ (12ビット) 足りないかも？
 
@@ -60,7 +60,7 @@ void pq_push(ap_uint<16> priority, ap_uint<16> data, ap_uint<12> *pq_len, ap_uin
 void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<12> *pq_len, ap_uint<32> pq_nodes[MAX_PQ]);
 
 #ifdef SOFTWARE
-void show_board(ap_uint<8> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<16> paths[MAX_LINES][MAX_PATH], ap_uint<16> starts[MAX_LINES], ap_uint<16> goals[MAX_LINES]);
+void show_board(ap_uint<7> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<16> paths[MAX_LINES][MAX_PATH], ap_uint<16> starts[MAX_LINES], ap_uint<16> goals[MAX_LINES]);
 #endif
 
 #endif /* __ROUTER_HPP__ */
