@@ -70,7 +70,7 @@ static ap_uint<7> size_x;       // ボードの X サイズ
 static ap_uint<7> size_y;       // ボードの Y サイズ
 static ap_uint<4> size_z;       // ボードの Z サイズ
 
-static ap_uint<7> line_num = 0; // ラインの総数
+static ap_uint<8> line_num = 0; // ラインの総数
 
 bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *status) {
 #pragma HLS INTERFACE s_axilite port=boardstr bundle=AXI4LS
@@ -102,7 +102,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 
     // ループカウンタは1ビット余分に用意しないと終了判定できない
     INIT_ADJACENTS:
-    for (ap_uint<8> i = 0; i < (ap_uint<8>)(MAX_LINES); i++) {
+    for (ap_uint<9> i = 0; i < (ap_uint<9>)(MAX_LINES); i++) {
         adjacents[i] = false;
     }
 
@@ -176,8 +176,8 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     // [Step 1] 初期ルーティング
     cout << "Initial Routing" << endl;
     FIRST_ROUTING:
-    for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
-#pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
+    for (ap_uint<9> i = 0; i < (ap_uint<9>)(line_num); i++) {
+#pragma HLS LOOP_TRIPCOUNT min=2 max=255 avg=50
 //#pragma HLS PIPELINE
 //#pragma HLS UNROLL factor=2
 
@@ -227,8 +227,8 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
         // (2) 重みを更新
         ap_uint<8> current_round_weight = new_weight(round);
         ROUTING_UPDATE:
-        for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
-#pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
+        for (ap_uint<9> i = 0; i < (ap_uint<9>)(line_num); i++) {
+#pragma HLS LOOP_TRIPCOUNT min=2 max=255 avg=50
 
             // 数字が隣接する場合スキップ、そうでない場合は実行
             if (adjacents[i] == false && i != target) {
@@ -258,9 +258,9 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
             overlap_checks[i] = 0;
         }
         OVERLAP_CHECK:
-        for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
+        for (ap_uint<9> i = 0; i < (ap_uint<9>)(line_num); i++) {
 #pragma HLS LOOP_FLATTEN off
-#pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
+#pragma HLS LOOP_TRIPCOUNT min=2 max=255 avg=50
             overlap_checks[starts[i]] = 1;
             overlap_checks[goals[i]] = 1;
 
@@ -312,8 +312,8 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     // このソルバでのラインIDを+1して表示する
     // なぜなら空白を 0 で表すことにするからラインIDは 1 以上にしたい
     OUTPUT_LINE:
-    for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
-#pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
+    for (ap_uint<9> i = 0; i < (ap_uint<9>)(line_num); i++) {
+#pragma HLS LOOP_TRIPCOUNT min=2 max=255 avg=50
         boardstr[starts[i]] = (i + 1);
         boardstr[goals[i]]  = (i + 1);
         OUTPUT_LINE_PATH:
@@ -680,7 +680,7 @@ void pq_pop(ap_uint<16> *ret_priority, ap_uint<16> *ret_data, ap_uint<12> *pq_le
 }
 
 #ifdef SOFTWARE
-void show_board(ap_uint<7> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<16> paths[MAX_LINES][MAX_PATH], ap_uint<16> starts[MAX_LINES], ap_uint<16> goals[MAX_LINES]) {
+void show_board(ap_uint<8> line_num, ap_uint<8> paths_size[MAX_LINES], ap_uint<16> paths[MAX_LINES][MAX_PATH], ap_uint<16> starts[MAX_LINES], ap_uint<16> goals[MAX_LINES]) {
     int boardmat[MAX_CELLS];
 
     // 空白
