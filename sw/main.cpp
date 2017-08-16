@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
     int size_z = (boardstr[7] - '0');
 
     // ƒ\ƒ‹ƒoÀs
-    ap_int<8> status;
+    ap_int<32> status;
     bool result = pynqrouter(boardstr, seed, &status);
     if (result) {
         cout << endl << "Test Passed!" << endl;

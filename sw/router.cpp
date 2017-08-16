@@ -78,13 +78,13 @@ static ap_uint<4> size_z;       // ボードの Z サイズ
 
 static ap_uint<7> line_num = 0; // ラインの総数
 
-bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *status) {
+bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *status) {
 #pragma HLS INTERFACE s_axilite port=boardstr bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=seed bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=status bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=return bundle=AXI4LS
 
-    *status = -127;
+    *status = -1;
 
     ap_uint<16> starts[MAX_LINES];          // ラインのスタートリスト
 #pragma HLS ARRAY_PARTITION variable=starts complete dim=1

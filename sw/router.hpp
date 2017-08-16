@@ -48,7 +48,7 @@ ap_uint<32> lfsr_random();
 //ap_uint<32> lfsr_random_uint32_0(ap_uint<32> b);
 
 ap_uint<8> new_weight(ap_uint<16> x);
-bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *status);
+bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *status);
 
 #ifdef USE_ASTAR
 ap_uint<7> abs_uint7(ap_uint<7> a, ap_uint<7> b);
