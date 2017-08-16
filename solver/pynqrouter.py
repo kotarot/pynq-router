@@ -18,8 +18,9 @@ import BoardStr
 
 # Settings
 IP = 'SEG_pynqrouter_0_Reg'
-OFFSET_BOARD = 65536   # 0x10000 ~ 0x1ffff
-OFFSET_SEED  = 131072  # 0x20000
+OFFSET_BOARD  = 65536   # 0x10000 ~ 0x1ffff
+OFFSET_SEED   = 131072  # 0x20000
+OFFSET_STATUS = 131080  # 0x20008
 MAX_X = 72
 MAX_Y = 72
 MAX_Z = 8
@@ -111,8 +112,12 @@ def main():
     elapsed = time_done - time_start
     print('elapsed:', elapsed)
 
-    # TODO: 状態の取得
-    pass
+    # 状態の取得
+    status = int(mmio.read(OFFSET_STATUS))
+    print('status:', status)
+    if status != 0:
+        sys.stderr.write('Cannot solve it!\n')
+        sys.exit(1)
 
     # 出力
     omem = []
