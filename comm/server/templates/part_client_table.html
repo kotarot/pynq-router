@@ -1,0 +1,13 @@
+<h3>クライアント状況</h3>
+<table class="table table-bordered" id="clients-table">
+    <tr>
+        <th>クライアント名</th>
+        <th>ステータス</th>
+    </tr>
+    {% for c in clients %}
+    <tr class="client-status-row" data-cname="{{c}}">
+        <td class="client-status-name">{{c}}</td>
+        <td class="client-status-value"></td>
+    </tr>
+    {% endfor %}
+</table>
