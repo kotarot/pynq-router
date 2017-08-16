@@ -18,8 +18,9 @@ import BoardStr
 
 # Settings
 IP = 'SEG_pynqrouter_0_Reg'
-OFFSET_BOARD = 65536   # 0x10000 ~ 0x1ffff
-OFFSET_SEED  = 131072  # 0x20000
+OFFSET_BOARD  = 65536   # 0x10000 ~ 0x1ffff
+OFFSET_SEED   = 131072  # 0x20000
+OFFSET_STATUS = 131080  # 0x20008
 MAX_X = 72
 MAX_Y = 72
 MAX_Z = 8
@@ -28,14 +29,27 @@ BITWIDTH_Z = 3
 
 def main():
     parser = argparse.ArgumentParser(description="Solver with pynqrouter")
+
+    # 入出力
     parser.add_argument('-i', '--input', action='store', nargs='?', default=None, type=str,
         help='Path to input problem file')
     parser.add_argument('-b', '--boardstr', action='store', nargs='?', default=None, type=str,
         help='Problem boardstr (if you want to solve directly)')
+    parser.add_argument('-o', '--output', action='store', nargs='?', default=None, type=str,
+        help='Path to output answer file')
+
+    # ソルバオプション
     parser.add_argument('-s', '--seed', action='store', nargs='?', default=12345, type=int,
         help='Random seed')
     parser.add_argument('-e', '--edge-start', action='store_true', default=False,
-        help='Turn on to set farther terminals from the center as starts')
+        help='Enable to set farther terminals from the center as starts')
+
+    # 出力オプション
+    parser.add_argument('-p', '--print', action='store_true', default=False,
+        help='Enable to print the solution')
+    parser.add_argument('-z', '--zero-padding', action='store_true', default=False,
+        help='Enable to do zero-padding')
+
     args = parser.parse_args()
 
     if args.input is not None:
@@ -53,7 +67,9 @@ def main():
         sys.stderr.write('Specify at least "input" or "boardstr"!\n')
         sys.exit(1)
 
-    print('boardstr =', boardstr)
+    print('boardstr:')
+    print(boardstr)
+    print('')
 
     # ボード文字列から X, Y, Z を読んでくる
     size_x = (ord(boardstr[1]) - ord('0')) * 10 + (ord(boardstr[2]) - ord('0'))
@@ -86,15 +102,22 @@ def main():
     #   done は一瞬だけ立つだけのことがあるから
     # ap_idle (0 番地の 3 ビット目 = 4) を待ったほうが良い
     while (mmio.read(0) & 4) == 0:
-        # 動いてるっぽく見えるようにLチカさせる
+        # TODO: 動いてるっぽく見えるようにLチカさせる
         pass
 
     # 完了の確認
-    print('control =', mmio.read(0))
     print('Done!')
+    print('control:', mmio.read(0))
     time_done = time.time()
     elapsed = time_done - time_start
-    print('elapsed =', elapsed)
+    print('elapsed:', elapsed)
+
+    # 状態の取得
+    status = int(mmio.read(OFFSET_STATUS))
+    print('status:', status)
+    if status != 0:
+        sys.stderr.write('Cannot solve it!\n')
+        sys.exit(1)
 
     # 出力
     omem = []
@@ -102,11 +125,8 @@ def main():
         omem.append(mmio.read(OFFSET_BOARD + (i * 4)))
     boards = unpack(omem)
 
-    # 表示
-    solution =  '\n'
-    solution += 'SOLUTION\n'
-    solution += '========\n'
-    solution += ('SIZE' + str(size_x) + 'X' + str(size_y) + 'X' + str(size_z) + '\n')
+    # 回答の生成
+    solution = ('SIZE ' + str(size_x) + 'X' + str(size_y) + 'X' + str(size_z) + '\n')
     for z in range(size_z):
         solution += ('LAYER ' + str(z + 1) + '\n')
         for y in range(size_y):
@@ -114,9 +134,21 @@ def main():
                 if x != 0:
                     solution += ','
                 i = ((x * MAX_X + y) << BITWIDTH_Z) | z
-                solution += '{0:0>2}'.format(boards[i])
+                if args.zero_padding:
+                    solution += '{0:0>2}'.format(boards[i])  # 2桁の0詰め
+                else:
+                    solution += str(boards[i])               # 普通に表示
             solution += '\n'
-    print(solution)
+
+    # 表示 & ファイル出力
+    if args.print:
+        print('')
+        print('SOLUTION')
+        print('========')
+        print(solution)
+    if args.output is not None:
+        with open(args.output, 'w') as f:
+            f.write(solution)
 
 
 def pack(_str):
