@@ -208,6 +208,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
 //#endif
 
         // 対象ラインを選択
+        // TODO: 剰余演算を用いずに試してみる
         ap_uint<8> target = lfsr_random() % line_num; // i.e., lfsr_random_uint32(0, line_num - 1);
 
         // 数字が隣接する場合スキップ、そうでない場合は実行
