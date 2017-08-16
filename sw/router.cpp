@@ -81,9 +81,9 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<8> *statu
     *status = -127;
 
     ap_uint<16> starts[MAX_LINES];          // ラインのスタートリスト
-//#pragma HLS ARRAY_PARTITION variable=starts complete dim=1
+#pragma HLS ARRAY_PARTITION variable=starts complete dim=1
     ap_uint<16> goals[MAX_LINES];           // ラインのゴールリスト
-//#pragma HLS ARRAY_PARTITION variable=goals complete dim=1
+#pragma HLS ARRAY_PARTITION variable=goals complete dim=1
 
     ap_uint<8> weights[MAX_CELLS];          // セルの重み
 //#pragma HLS ARRAY_PARTITION variable=weights cyclic factor=8 dim=1 partition
