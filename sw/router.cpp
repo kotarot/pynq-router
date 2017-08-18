@@ -203,6 +203,18 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *stat
 #pragma HLS ARRAY_PARTITION variable=overlap_checks cyclic factor=16 dim=1 partition
     bool has_overlap = false;
 
+#ifndef USE_MOD_CALC
+    // line_num_2: line_num 以上で最小の2のべき乗数
+    ap_uint<8> line_num_2;
+    CALC_LINE_NUM_2:
+    for (line_num_2 = 1; line_num_2 < (ap_uint<8>)line_num; line_num_2 *= 2) {
+#pragma HLS LOOP_TRIPCOUNT min=1 max=8 avg=4
+        ;
+    }
+    //cout << "line_num: " << line_num << endl;
+    //cout << "line_num_2: " << line_num_2 << endl;
+#endif
+
     // [Step 2] Rip-up 再ルーティング
     ROUTING:
     for (ap_uint<16> round = 1; round <= 32768 /* = (2048 * 16) */; round++) {
@@ -213,8 +225,17 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *stat
 //#endif
 
         // 対象ラインを選択
-        // TODO: 剰余演算を用いずに試してみる
+#ifdef USE_MOD_CALC
+        // (1) 剰余演算を用いる方法
         ap_uint<8> target = lfsr_random() % line_num; // i.e., lfsr_random_uint32(0, line_num - 1);
+#else
+        // (2) 剰余演算を用いない方法
+        ap_uint<8> target = lfsr_random() & (line_num_2 - 1);
+        if (line_num <= target) {
+            cout << endl;
+            continue;
+        }
+#endif
 
         // 数字が隣接する場合スキップ、そうでない場合は実行
         if (adjacents[target] == true) {

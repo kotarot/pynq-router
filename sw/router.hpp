@@ -15,7 +15,7 @@
 
 //#define DEBUG_PRINT  // いろいろ表示する
 #define USE_ASTAR    // A* 探索を使う
-
+#define USE_MOD_CALC // ターゲットラインの選択に剰余演算を用いる
 
 using namespace std;
 
