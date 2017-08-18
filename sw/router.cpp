@@ -171,6 +171,9 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *stat
     // 乱数の初期化
     lfsr_random_init(seed);
 
+    // TODO
+    // すべてのラインが隣接してたらソルバを終わりにする
+
     // ================================
     // 初期化 END
     // ================================
