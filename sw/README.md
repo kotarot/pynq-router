@@ -42,6 +42,9 @@ Vivado HLS 用 pynq-router
 * 2017/08/16: MAX_LINES を 128 に戻した (そうしないと論理合成・配置配線でタイミング満たさない)
   * (3.0) Estimated clock: 6.78, Max latency: 1,329,245,034 (0.797)
   * (3.5) Estimated clock: 6.45, Max latency: 1,354,519,035 (0.800)
+* 2017/08/16: コスト関数の波形をのこぎり型にした
+  * (3.0) Estimated clock: 6.78, Max latency: 1,329,245,034 (13.29 sec) (0.797)
+  * (3.5) Estimated clock: 6.45, Max latency: 1,354,519,035 (13.55 sec) (0.800)
 
 
 ## 入出力
