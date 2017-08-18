@@ -215,13 +215,15 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *stat
     //cout << "line_num_2: " << line_num_2 << endl;
 #endif
 
+    ap_uint<8> last_target = 255;
+
     // [Step 2] Rip-up 再ルーティング
     ROUTING:
     for (ap_uint<16> round = 1; round <= 32768 /* = (2048 * 16) */; round++) {
 #pragma HLS LOOP_TRIPCOUNT min=1 max=4000 avg=50
 
 //#ifdef DEBUG_PRINT
-        cout << "ROUND " << round;
+        cout << "ITERATION " << round;
 //#endif
 
         // 対象ラインを選択
@@ -242,6 +244,13 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *stat
             cout << endl;
             continue;
         }
+
+        // 直前のイテレーション (ラウンド) と同じ対象ラインだったらルーティングスキップする
+        if (target == last_target) {
+            cout << endl;
+            continue;
+        }
+        last_target = target;
 
         // (1) 引きはがすラインの重みをリセット
         ROUTING_RESET:

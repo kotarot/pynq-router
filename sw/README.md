@@ -44,11 +44,15 @@ Vivado HLS 用 pynq-router
   * (3.5) Estimated clock: 6.45, Max latency: 1,354,519,035 (0.800)
 * 2017/08/16: コスト関数の波形をのこぎり型にした
   * (3.0) Estimated clock: 6.78, Max latency: 1,329,245,034 (13.29 sec) (0.797)
-  * (3.25) Estimated clock: 6.52, Max latency: 1,329,249,035 (13.29 sec)  **←今これ**
+  * (3.25) Estimated clock: 6.52, Max latency: 1,329,249,035 (13.29 sec)
   * (3.5) Estimated clock: 6.45, Max latency: 1,354,519,035 (13.55 sec) (0.800)
-* 2017/08/18: 対象ライン選択に剰余演算を用いない方法を試してみた ※あまり変わらないから元に戻す
+* 2017/08/18: 対象ライン選択に剰余演算を用いない方法を試してみた ※あまり変わらないからこれはやらずに元に戻す
   * (3.0) Estimated clock: 6.52, Max latency: 1,329,101,007 (13.29 sec) (0.797)
   * (3.5) Estimated clock: 6.45, Max latency: 1,354,371,007 (13.54 sec) (0.800)
+* 2017/08/18: 対象ラインが連続して同じだったらルーティングスキップする
+  * (3.0) Estimated clock: 6.78, Max latency: 1,329,245,034 (13.29 sec)
+  * (3.25) Estimated clock: 6.52, Max latency: 1,329,249,035 (13.29 sec)  **←今これ**
+  * (3.5) Estimated clock: 6.45, Max latency: 1,354,519,035 (13.55 sec)
 
 
 ## 入出力
