@@ -17,11 +17,11 @@
 To setup the Raspberry Pi and PYNQs,
 see [wiki](https://github.com/kotarot/pynq-router/wiki) pages.
 
-各 PYNQ のホームディレクトリに次のように `solver` ディレクトリを作成し、必要なファイル (`solver/BoardStr.py`, `solver/pynqrouter.py`) をコピーする。
+各 PYNQ でこのリポジトリをクローンしておく。
 
 ```
 cd /home/xilinx
-mkdir solver
+git clone https://github.com/kotarot/pynq-router.git
 ```
 
 
