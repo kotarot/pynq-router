@@ -7,15 +7,16 @@ tags
 *.swp
 .*
 ~*
-!README.txt
 *.original
 *.zip
+*.txt
+!README.txt
+!servers.txt
 
 # Object files
 *.o
 
 # Problem files
-*.txt
 !issue*
 !problems/.gitkeep
 !answers/.gitkeep
