@@ -14,8 +14,8 @@ Vivado HLS 用 pynq-router
 * Clock Uncertainty: 3.0 ns, 3.5 ns // 2017/08/04
 
 論理合成・配置配線のオプション:
-* Synthesis strategy: Vivado Synthesis Defaults ~~Flow_PerfOptimized_high~~
-* Implementation strategy: Vivado Implementation Defaults ~~Performance_Explore~~
+* Synthesis strategy: ~~Vivado Synthesis Defaults~~ Flow_PerfOptimized_high
+* Implementation strategy: ~~Vivado Implementation Defaults~~ Performance_Explore
 
 最適化記録：
 * 2017/08/04: クリティカルパス遅延の最適化
