@@ -1,0 +1,8 @@
+<h3>問題 【{{qname}}】</h3>
+<p>
+    <button class="btn btn-default start-button" type="button" data-qname="{{qname}}">Start</button>
+</p>
+<p>状況：<span id="solving-question-status">{{qdata.status}}</span></p>
+<h4>結果</h4>
+<p>クライアント：<span id="solved-client">{{qdata.answer.client}}</span></p>
+<pre id="solved-result">{{qdata.answer.answer}}</pre>

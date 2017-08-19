@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PYNQ Router Control Panel</title>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/static/css/bootstrap-theme.min.css">
+    <script src="/static/js/jquery.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <script src="/static/js/pynq-manager.js"></script>
+<style>
+html, body{
+    width: 800px;
+    /*height: 500px;*/
+    overflow: hidden;
+}
+#question-table-wrapper{
+    height: 500px;
+    overflow: scroll;
+}
+
+#question-table-wrapper table th,
+#question-table-wrapper table td{
+    width: 33%;
+}
+
+#client-control-pane table th,
+#client-control-pane table td{
+    width: 50%;
+}
+</style>
+
+<script>
+$(function(){
+
+    var pynqClients = {}
+    var pm = null;
+
+    var refresh_question_table = function(){
+        $.ajax({
+            type: "GET",
+            dataType: "html",
+            url: "/get_question_table"
+        }).done(function(d){
+            $("#question-table-wrapper").find("#question-table").remove();
+            $("#question-table-wrapper").html(d);
+
+            $(".show-question-status-button").click(function(){
+                var qname = $(this).data("qname");
+                show_question_status(qname);
+                return false;
+            });
+        });
+    }
+
+    var refresh_client_table = function(){
+        $.ajax({
+            type: "GET",
+            dataType: "html",
+            url: "/get_client_table"
+        }).done(function(d){
+            $("#client-control-pane").html("");
+            $("#client-control-pane").html(d);
+
+            $.ajax({
+                type: "GET",
+                dataType: "json",
+                url: "/get_clients"
+            }).done(function(d){
+                pynqClients = d;
+                pm = PynqManager(pynqClients);
+                pm.getStatus();
+            });
+        });
+    }
+
+    var show_question_status = function(qname){
+        $.ajax({
+            type: "GET",
+            dataType: "html",
+            url: "/get_question_status",
+            data: {qname: qname}
+        }).done(function(d){
+            $("#client-control-pane").html("");
+            $("#client-control-pane").html(d);
+
+            $("#client-control-pane").find(".start-button").eq(0).click(function(){
+                var qname = $(this).data("qname");
+                pm.sendQuestion(qname, after=refresh_question_table);
+            });
+        });
+    }
+
+    refresh_question_table();
+    refresh_client_table();
+
+    $("#view-server-status-button").click(function(){
+        refresh_client_table();
+        return false;
+    });
+
+});
+
+</script>
+</head>
+<body>
+
+<div id="wrapper">
+        
+    <div id="contorol-panel-wrapper" class="container-fluid">
+
+        <div class="col-xs-6 col-sm-6" id="question-control-pane">
+            <h3>問題一覧</h3>
+            <p><a href="#" id="view-server-status-button">サーバ状況</a></p>
+
+            <div id="question-table-wrapper">
+                <p>Loading...</p>
+            </div>
+        </div>
+
+        <div class="col-xs-6 col-sm-6" id="client-control-pane">
+            <p>Loading...</p>
+        </div>
+
+    </div>
+
+
+</div>
+
+</body>
+</html>

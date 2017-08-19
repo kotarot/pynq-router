@@ -1,0 +1,16 @@
+<table class="table table-bordered" id="question-table">
+    <tr>
+        <th>ファイル名</th>
+        <th>ステータス</th>
+        <th>操作</th>
+    </tr>
+    {% for k, v in questions.items() %}
+    <tr>
+        <td>{{k}}</td>
+        <td>{{v.status}}</td>
+        <td>
+            <a href="#" class="show-question-status-button" data-qname="{{k}}">選択</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
