@@ -161,4 +161,4 @@ if __name__ == "__main__":
 
     if args["debug"]:
         app.debug = True
-    app.run(port=args["port"], threaded=True)
+    app.run(host='0.0.0.0', port=args["port"], threaded=True)

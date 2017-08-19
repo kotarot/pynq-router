@@ -235,6 +235,6 @@ if __name__ == "__main__":
     if args["gui"]:
         if args["debug"]:
             app.debug = True
-        app.run(threaded=True)
+        app.run(host='0.0.0.0', threaded=True)
     else:
         main(args)
