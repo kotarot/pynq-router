@@ -17,7 +17,7 @@
 To setup the Raspberry Pi and PYNQs,
 see [wiki](https://github.com/kotarot/pynq-router/wiki) pages.
 
-各 PYNQ のホームディレクトリに次のように `solver` ディレクトリを作成しておく。
+各 PYNQ のホームディレクトリに次のように `solver` ディレクトリを作成し、必要なファイル (`solver/BoardStr.py`, `solver/pynqrouter.py`) をコピーする。
 
 ```
 cd /home/xilinx
@@ -73,8 +73,11 @@ python gen_boardstr.py ../NLGenerator/Q-10x10x4_20_50.txt
 PYNQ 上で次のコマンドでソルバ実行する。
 
 ```
-TODO
+cd /home/xilinx/solver
+/opt/python3.6/bin/python3.6 pynqrouter.py -i problem.txt -o output.txt
 ```
+
+`/opt/python3.6/bin/python3.6 pynqrouter.py -h` で詳細オプションを見よう。
 
 
 ## Publications
