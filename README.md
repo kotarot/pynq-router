@@ -79,6 +79,20 @@ cd /home/xilinx/solver
 
 `/opt/python3.6/bin/python3.6 pynqrouter.py -h` で詳細オプションを見よう。
 
+### Raspberry Pi と複数の PYNQ で実行する
+
+#### Raspberry Pi (サーバ) 側
+
+```
+/opt/python3.6/bin/python3.6 comm/server/main.py -c servers.txt -q ./prooblems_2016/ --debug
+```
+
+#### PYNQ (クライアント) 側
+
+```
+/opt/python3.6/bin/python3.6 comm/client/main.py --debug
+```
+
 
 ## Publications
 
