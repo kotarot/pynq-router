@@ -41,10 +41,10 @@ def main():
         help='Path to output answer file')
 
     # ソルバオプション
+    parser.add_argument('-t', '--terminals', action='store', nargs='?', default='initial', type=str,
+        help='Terminals order (initial, edgefirst, or random) (default: initial)')
     parser.add_argument('-s', '--seed', action='store', nargs='?', default=12345, type=int,
         help='Random seed')
-    parser.add_argument('-e', '--edge-start', action='store_true', default=False,
-        help='Enable to set farther terminals from the center as starts')
 
     # 出力オプション
     parser.add_argument('-p', '--print', action='store_true', default=False,
@@ -60,7 +60,7 @@ def main():
             lines = f.readlines()
 
         # 問題ファイルを boardstr に変換
-        boardstr = BoardStr.conv_boardstr(lines, args.edge_start)
+        boardstr = BoardStr.conv_boardstr(lines, args.terminals, args.seed)
 
     elif args.boardstr is not None:
         boardstr = args.boardstr
@@ -71,6 +71,8 @@ def main():
 
     print('boardstr:')
     print(boardstr)
+    print('terminals:')
+    print(args.terminals)
     print('seed:')
     print(args.seed)
     print('')

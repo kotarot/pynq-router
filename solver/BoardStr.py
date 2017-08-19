@@ -5,10 +5,14 @@
 問題ファイルを boardstr に変換したりするクラス。
 """
 
-def conv_boardstr(lines, edge_start=False):
+import random
+
+def conv_boardstr(lines, terminals='initial', _seed=12345):
     """
     問題ファイルを boardstr に変換
     """
+
+    random.seed(_seed)
 
     boardstr = ''
     for line in lines:
@@ -40,12 +44,24 @@ def conv_boardstr(lines, edge_start=False):
             g_dist = g_dist_x + g_dist_y + g_dist_z
             #print(g_dist_x, g_dist_y, g_dist_z, g_dist)
 
+            # start と goal
+            start_term = '%02d%02d%d' % (int(s_str[0]), int(s_str[1]), int(s_str[2]))
+            goal_term  = '%02d%02d%d' % (int(g_str[0]), int(g_str[1]), int(g_str[2]))
+
             # 端に近い方をスタートにするオプションがオンのときは距離に応じて端点を選択する
-            if (not edge_start) or s_dist <= g_dist:
-                boardstr += ('L%02d%02d%d%02d%02d%d' % (int(s_str[0]), int(s_str[1]), int(s_str[2]), int(g_str[0]), int(g_str[1]), int(g_str[2])))
-                #print('S')
+            if terminals == 'edgefirst':
+                if s_dist <= g_dist:
+                    boardstr += ('L' + start_term + goal_term)
+                else:
+                    boardstr += ('L' + goal_term + start_term)
+            # ランダムにスタート・ゴールを選ぶ
+            elif terminals == 'random':
+                if random.random() < 0.5:
+                    boardstr += ('L' + start_term + goal_term)
+                else:
+                    boardstr += ('L' + goal_term + start_term)
+            # 問題ファイルに出てきた順
             else:
-                boardstr += ('L%02d%02d%d%02d%02d%d' % (int(g_str[0]), int(g_str[1]), int(g_str[2]), int(s_str[0]), int(s_str[1]), int(s_str[2])))
-                #print('G')
+                boardstr += ('L' + start_term + goal_term)
 
     return boardstr
