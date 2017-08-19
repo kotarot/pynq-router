@@ -71,6 +71,8 @@ def main():
 
     print('boardstr:')
     print(boardstr)
+    print('seed:')
+    print(args.seed)
     print('')
 
     # ボード文字列から X, Y, Z を読んでくる
@@ -123,6 +125,7 @@ def main():
     time_done = time.time()
     elapsed = time_done - time_start
     print('elapsed:', elapsed)
+    print('')
 
     # 状態の取得
     status = int(mmio.read(OFFSET_STATUS))
@@ -132,6 +135,7 @@ def main():
         mmio_led.write(0, 0)
         sys.stderr.write('Cannot solve it!\n')
         sys.exit(1)
+    print('Solved!')
 
     # 解けたらLEDを全部つける
     mmio_led.write(0, 15)
