@@ -62,9 +62,16 @@ ap_uint<32> lfsr_random() {
 // min_uint8(r, MAX_WEIGHT) と同じ
 ap_uint<8> new_weight(ap_uint<16> x) {
 #pragma HLS INLINE
+#if 1
     // 下位8ビット (最大 255) を抜き出して、1/8 をかけて最大 31 (32) にする
     ap_uint<8> y = x & 255;
     return (ap_uint<8>)(y / 8 + 1);
+#endif
+#if 0
+    // 下位10ビット (最大 1023) を抜き出して、1/32 をかけて最大 31 (32) にする
+    ap_uint<10> y = x & 1023;
+    return (ap_uint<8>)(y / 32 + 1);
+#endif
 #if 0
     ap_uint<8> y = x / 8;
     if (y < (ap_uint<16>)MAX_WEIGHT) { return y; }
