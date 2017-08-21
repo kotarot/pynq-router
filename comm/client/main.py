@@ -6,6 +6,7 @@ This is intended to run on the client server (PYNQ).
 
 import argparse
 import json
+import os
 import platform
 import requests
 import sys
@@ -14,6 +15,10 @@ import time
 from flask import Flask, render_template, request, g
 from urllib.parse import urlparse
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../../solver')
+import BoardStr
+import pynqrouter
+
 app = Flask(__name__)
 args = {}
 pynq_thread = None
@@ -21,11 +26,12 @@ client_baseurl = ""
 
 # Reference: https://teratail.com/questions/52593
 class StoppableThread(threading.Thread):
-    def __init__(self, target, qname, qstr):
+    def __init__(self, target, qname, qstr, qseed):
         super(StoppableThread, self).__init__(target=target)
         self._th_stop = threading.Event()
         self._qname = qname
         self._qstr = qstr
+        self._qseed = int(qseed)
         self._answer = None
 
     def run(self):
@@ -34,13 +40,14 @@ class StoppableThread(threading.Thread):
         global args
 
         # Main funciton (the solver should be placed here)
-        cnt = 0
-        while (not self._th_stop.is_set()) and (cnt < 5):
-            time.sleep(1)
-            # print(self._qname, cnt)
-            cnt += 1
-
-        answer = "This is an answer"
+        boardstr = BoardStr.conv_boardstr(self._qstr.split('\n'), 'random', self._qseed)
+        result = pynqrouter.solve(boardstr, self._qseed)
+        if result['solved']:
+            answer = result['solution']
+        else:
+            answer = None
+            pynq_thread = None
+            return
 
         res = {
             "client": client_baseurl,
@@ -79,7 +86,8 @@ def start():
     if pynq_thread is None:
         qstr = request.form["question"]
         qname = request.form["qname"]
-        pynq_thread = StoppableThread(target=StoppableThread, qname=qname, qstr=qstr)
+        qseed = request.form["qseed"]
+        pynq_thread = StoppableThread(target=StoppableThread, qname=qname, qstr=qstr, qseed=qseed)
 
         pynq_thread.start()
 
