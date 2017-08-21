@@ -62,7 +62,7 @@ def main():
             (count, line[0][0], line[0][1], line[0][2], line[1][0], line[1][1], line[1][2]))
         count += 1
 
-    with open('NL_HUGE%d.txt' % (n), 'w') as f:
+    with open('NL_QHUGE%d.txt' % (n), 'w') as f:
         f.write('\n'.join(str) + '\n')
 
 
