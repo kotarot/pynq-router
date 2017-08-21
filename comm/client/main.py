@@ -6,6 +6,7 @@ This is intended to run on the client server (PYNQ).
 
 import argparse
 import json
+import os
 import platform
 import requests
 import sys
@@ -13,6 +14,10 @@ import threading
 import time
 from flask import Flask, render_template, request, g
 from urllib.parse import urlparse
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../../solver')
+import BoardStr
+import pynqrouter
 
 app = Flask(__name__)
 args = {}
@@ -34,13 +39,8 @@ class StoppableThread(threading.Thread):
         global args
 
         # Main funciton (the solver should be placed here)
-        cnt = 0
-        while (not self._th_stop.is_set()) and (cnt < 5):
-            time.sleep(1)
-            # print(self._qname, cnt)
-            cnt += 1
-
-        answer = "This is an answer"
+        result = pynqrouter.solve(self._qstr, 12345)
+        answer = result['solution']
 
         res = {
             "client": client_baseurl,
