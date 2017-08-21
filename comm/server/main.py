@@ -90,12 +90,13 @@ def start():
             line_num = int(l.strip().split()[1])
             break
 
-    qstr = BoardStr.conv_boardstr(_q_lines, 'random', 12345)
+    #qstr = BoardStr.conv_boardstr(_q_lines, 'random', 12345)
+    qstr = "\n".join(_q_lines)
 
     if line_num >= 0:
         if line_num < app_args["line_num_th"]:
             # LINE_NUMが閾値未満のとき，PYNQに問題を配信して問題を解かせる
-            res = solve_questions(_question_name, qstr)
+            res = solve_questions(_question_name, qstr, 12345)
         else:
             # LINE_NUMが閾値以上のとき，PYNQでは解けないのでRaspberry Piに解かせる
             raise NotImprementedError()
@@ -112,15 +113,15 @@ def start():
 
     return json.dumps(res)
 
-def solve_questions(qname, qstr):
+def solve_questions(qname, qstr, qseed):
 
     global clients
     global questions
     global app_args
 
-    def worker(host, qname, qstr, q):
+    def worker(host, qname, qstr, qseed, q):
         _url = "http://{}/start".format(host)
-        r = requests.post(_url, data={"client": host, "qname": qname, "question": qstr})
+        r = requests.post(_url, data={"client": host, "qname": qname, "question": qstr, "qseed": qseed})
         client_res = json.loads(r.text)
         q.put(client_res)
 
@@ -128,7 +129,7 @@ def solve_questions(qname, qstr):
     q = Queue()
 
     for c in clients:
-        _th = threading.Thread(name=c, target=worker, args=(c, qname, qstr, q))
+        _th = threading.Thread(name=c, target=worker, args=(c, qname, qstr, qseed, q))
         _th.start()
         threads.append(_th)
 
@@ -146,6 +147,7 @@ def solve_questions(qname, qstr):
 
     # res["answers"]に，回答を得られたものの結果が，返ってきた順に入る．
     # 解の品質等を決めて最終的な回答を与える場合はここで処理する（今はとりあえず最初の答え）
+    # TODO: 答えが無い場合の処理
     res["answer"] = res["answers"][0]
 
     print(res)
