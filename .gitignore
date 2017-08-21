@@ -20,6 +20,8 @@ tags
 !issue*
 !problems/.gitkeep
 !answers/.gitkeep
+!NL_QHUGE*.txt
+!NL_QLINE*.txt
 
 # Executables
 *.exe
