@@ -100,10 +100,16 @@ def start():
             raise NotImprementedError()
 
     # 回答をファイルに保存するとしたらここで処理する
+    # (1) 一旦回答をテンポラリファイルに保存
     qnumber = _question_name.replace(".txt", "").replace("NL_Q", "")
-    outpath = "{}/T01_A{}.txt".format(app_args["out"], qnumber)
-    with open(outpath, "w") as fp:
+    tmppath = "{}/T03_A{}_tmp.txt".format(app_args["out"], qnumber)
+    with open(tmppath, "w") as fp:
         fp.write(res["answer"]["answer"])
+    # (2) 再配線する
+    probpath = "{}/{}".format(app_args["question"], _question_name)
+    outpath = "{}/T03_A{}.txt".format(app_args["out"], qnumber)
+    cmd = "/home/pi/pynq-router/resolver/solver --output {} {} {}".format(outpath, probpath, tmppath)
+    subprocess.call(cmd.strip().split(" "))
 
     # 最終結果だけを保存
     questions[_question_name]["status"] = "Done"
