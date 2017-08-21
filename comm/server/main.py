@@ -135,7 +135,7 @@ def solve_questions(qname, qstr, qseed):
 
     # PYNQが解き終わるまで待つ（ここでは最大10秒）
     cnt = 0
-    while cnt < app_args["timeout"] and questions[qname]["queue"].qsize() < len(clients):
+    while cnt < app_args["timeout"] and questions[qname]["queue"].qsize() < 1:
         time.sleep(1)
         cnt += 1
 
