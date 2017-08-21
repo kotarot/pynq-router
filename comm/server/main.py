@@ -90,7 +90,7 @@ def start():
             line_num = int(l.strip().split()[1])
             break
 
-    qstr = BoardStr.conv_boardstr(_q_lines)
+    qstr = BoardStr.conv_boardstr(_q_lines, 'random', 12345)
 
     if line_num >= 0:
         if line_num < app_args["line_num_th"]:
