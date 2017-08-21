@@ -16,13 +16,11 @@ from collections import OrderedDict
 from flask import Flask, render_template, request, g
 from queue import Queue
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../solver")
-import BoardStr
-
 app = Flask(__name__)
 app_args = {}
 questions = None
 clients = None
+current_seed = 1
 
 @app.before_request
 def before_request():
@@ -33,6 +31,7 @@ def before_request():
     if questions is None:
         question_path = os.path.abspath(app_args["question"])
         question_list = glob.glob("{}/NL_*.txt".format(question_path))
+        question_list.sort()
 
         questions = OrderedDict()
 
@@ -90,13 +89,12 @@ def start():
             line_num = int(l.strip().split()[1])
             break
 
-    #qstr = BoardStr.conv_boardstr(_q_lines, 'random', 12345)
     qstr = "\n".join(_q_lines)
 
     if line_num >= 0:
         if line_num < app_args["line_num_th"]:
             # LINE_NUMが閾値未満のとき，PYNQに問題を配信して問題を解かせる
-            res = solve_questions(_question_name, qstr, 12345)
+            res = solve_questions(_question_name, qstr)
         else:
             # LINE_NUMが閾値以上のとき，PYNQでは解けないのでRaspberry Piに解かせる
             raise NotImprementedError()
@@ -113,10 +111,11 @@ def start():
 
     return json.dumps(res)
 
-def solve_questions(qname, qstr, qseed):
+def solve_questions(qname, qstr):
 
     global clients
     global questions
+    global current_seed
     global app_args
 
     def worker(host, qname, qstr, qseed, q):
@@ -129,9 +128,10 @@ def solve_questions(qname, qstr, qseed):
     q = Queue()
 
     for c in clients:
-        _th = threading.Thread(name=c, target=worker, args=(c, qname, qstr, qseed, q))
+        _th = threading.Thread(name=c, target=worker, args=(c, qname, qstr, current_seed, q))
         _th.start()
         threads.append(_th)
+        current_seed += 1
 
     # PYNQが解き終わるまで待つ（ここでは最大10秒）
     cnt = 0
