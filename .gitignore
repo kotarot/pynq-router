@@ -26,6 +26,7 @@ tags
 *.stackdump
 *.out
 sim
+solver
 
 # Python files
 *.pyc
