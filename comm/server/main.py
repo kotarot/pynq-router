@@ -16,13 +16,11 @@ from collections import OrderedDict
 from flask import Flask, render_template, request, g
 from queue import Queue
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../solver")
-import BoardStr
-
 app = Flask(__name__)
 app_args = {}
 questions = None
 clients = None
+current_seed = 1
 
 @app.before_request
 def before_request():
@@ -33,6 +31,7 @@ def before_request():
     if questions is None:
         question_path = os.path.abspath(app_args["question"])
         question_list = glob.glob("{}/NL_*.txt".format(question_path))
+        question_list.sort()
 
         questions = OrderedDict()
 
@@ -90,7 +89,7 @@ def start():
             line_num = int(l.strip().split()[1])
             break
 
-    qstr = BoardStr.conv_boardstr(_q_lines)
+    qstr = "\n".join(_q_lines)
 
     if line_num >= 0:
         if line_num < app_args["line_num_th"]:
@@ -116,11 +115,12 @@ def solve_questions(qname, qstr):
 
     global clients
     global questions
+    global current_seed
     global app_args
 
-    def worker(host, qname, qstr, q):
+    def worker(host, qname, qstr, qseed, q):
         _url = "http://{}/start".format(host)
-        r = requests.post(_url, data={"client": host, "qname": qname, "question": qstr})
+        r = requests.post(_url, data={"client": host, "qname": qname, "question": qstr, "qseed": qseed})
         client_res = json.loads(r.text)
         q.put(client_res)
 
@@ -128,13 +128,14 @@ def solve_questions(qname, qstr):
     q = Queue()
 
     for c in clients:
-        _th = threading.Thread(name=c, target=worker, args=(c, qname, qstr, q))
+        _th = threading.Thread(name=c, target=worker, args=(c, qname, qstr, current_seed, q))
         _th.start()
         threads.append(_th)
+        current_seed += 1
 
     # PYNQが解き終わるまで待つ（ここでは最大10秒）
     cnt = 0
-    while cnt < app_args["timeout"] and questions[qname]["queue"].qsize() < len(clients):
+    while cnt < app_args["timeout"] and questions[qname]["queue"].qsize() < 1:
         time.sleep(1)
         cnt += 1
 
@@ -146,6 +147,7 @@ def solve_questions(qname, qstr):
 
     # res["answers"]に，回答を得られたものの結果が，返ってきた順に入る．
     # 解の品質等を決めて最終的な回答を与える場合はここで処理する（今はとりあえず最初の答え）
+    # TODO: 答えが無い場合の処理
     res["answer"] = res["answers"][0]
 
     print(res)
