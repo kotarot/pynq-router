@@ -75,5 +75,3 @@ sed -e "s/ap_int<1>/int/g" \
     -e "s/ap_uint<16>/unsigned int/g" \
     -e "s/MAX_LINES  128/MAX_LINES  65535/g" \
     ../sw/router.hpp > router.hpp
-
-cp ../sw/main.cpp ./main.cpp

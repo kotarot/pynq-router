@@ -12,6 +12,9 @@
 
 #include "router.hpp"
 
+#include <iostream>
+#include <fstream>
+
 
 int main(int argc, char *argv[]) {
     using namespace std;
@@ -59,23 +62,31 @@ int main(int argc, char *argv[]) {
     }
     cout << "status = " << (int)status << endl << endl;
 
-    // 解表示
-    cout << "SOLUTION" << endl;
-    cout << "========" << endl;
-    cout << "SIZE " << size_x << "X" << size_y << "X" << size_z << endl;
+    // ファイル出力
+    char fnout[256] = "out.txt";
+    char *fn = fnout;
+    if (3 < argc) {
+        fn = argv[3];
+    }
+    std::ofstream f;
+    f.open(fn, ios::out);
+    //cout << "SOLUTION" << endl;
+    //cout << "========" << endl;
+    f << "SIZE " << size_x << "X" << size_y << "X" << size_z << endl;
     for (int z = 0; z < size_z; z++) {
-        cout << "LAYER " << (z + 1) << endl;
+        f << "LAYER " << (z + 1) << endl;
         for (int y = 0; y < size_y; y++) {
             for (int x = 0; x < size_x; x++) {
                 if (x != 0) {
-                    cout << ",";
+                    f << ",";
                 }
                 int i = ((x * MAX_WIDTH + y) << BITWIDTH_Z) | z;
-                cout << setfill('0') << setw(2) << right << (unsigned int)(unsigned char)(boardstr[i]);
+                f << setfill('0') << setw(2) << right << (unsigned int)(unsigned char)(boardstr[i]);
             }
-            cout << endl;
+            f << endl;
         }
     }
+    f.close();
 
     return 0;
 }
