@@ -84,7 +84,7 @@ cd /home/xilinx/solver
 #### Raspberry Pi (サーバ) 側
 
 ```
-/opt/python3.6/bin/python3.6 comm/server/main.py -c servers.txt -q ./prooblems -o ./answers --debug
+/opt/python3.6/bin/python3.6 comm/server/main.py -c servers.txt -q ./problems -o ./answers --debug
 ```
 
 #### PYNQ (クライアント) 側
