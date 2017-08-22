@@ -249,7 +249,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *stat
 #pragma HLS LOOP_TRIPCOUNT min=1 max=4000 avg=50
 
 //#ifdef DEBUG_PRINT
-        cout << "ITERATION " << round;
+        //cout << "ITERATION " << round;
 //#endif
 
         // 対象ラインを選択
@@ -260,20 +260,20 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *stat
         // (2) 剰余演算を用いない方法
         ap_uint<8> target = lfsr_random() & (line_num_2 - 1);
         if (line_num <= target) {
-            cout << endl;
+            //cout << endl;
             continue;
         }
 #endif
 
         // 数字が隣接する場合スキップ、そうでない場合は実行
         if (adjacents[target] == true) {
-            cout << endl;
+            //cout << endl;
             continue;
         }
 
         // 直前のイテレーション (ラウンド) と同じ対象ラインだったらルーティングスキップする
         if (target == last_target) {
-            cout << endl;
+            //cout << endl;
             continue;
         }
         last_target = target;
@@ -289,7 +289,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *stat
 
         // (2) 重みを更新
         ap_uint<8> current_round_weight = new_weight(round);
-        cout << "  weight " << current_round_weight << endl;
+        //cout << "  weight " << current_round_weight << endl;
         ROUTING_UPDATE:
         for (ap_uint<8> i = 0; i < (ap_uint<8>)(line_num); i++) {
 #pragma HLS LOOP_TRIPCOUNT min=2 max=127 avg=50
