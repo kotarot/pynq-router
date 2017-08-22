@@ -86,6 +86,18 @@ static ap_uint<4> size_z;       // ボードの Z サイズ
 
 static ap_uint<7> line_num = 0; // ラインの総数
 
+// グローバル変数で定義する
+#ifdef GLOBALVARS
+    ap_uint<16> starts[MAX_LINES];          // ラインのスタートリスト
+    ap_uint<16> goals[MAX_LINES];           // ラインのゴールリスト
+
+    ap_uint<8> weights[MAX_CELLS];          // セルの重み
+
+    ap_uint<8> paths_size[MAX_LINES];       // ラインが対応するセルIDのサイズ
+    ap_uint<16> paths[MAX_LINES][MAX_PATH]; // ラインが対応するセルIDの集合 (スタートとゴールは除く)
+    bool adjacents[MAX_LINES];              // スタートとゴールが隣接しているライン
+#endif
+
 bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *status) {
 #pragma HLS INTERFACE s_axilite port=boardstr bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=seed bundle=AXI4LS
@@ -94,6 +106,8 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *stat
 
     *status = -1;
 
+// グローバル変数では定義しない
+#ifndef GLOBALVARS
     ap_uint<16> starts[MAX_LINES];          // ラインのスタートリスト
 #pragma HLS ARRAY_PARTITION variable=starts complete dim=1
     ap_uint<16> goals[MAX_LINES];           // ラインのゴールリスト
@@ -109,6 +123,7 @@ bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *stat
 //#pragma HLS ARRAY_PARTITION variable=paths cyclic factor=16 dim=2 partition
     bool adjacents[MAX_LINES];              // スタートとゴールが隣接しているライン
 //#pragma HLS ARRAY_PARTITION variable=adjacents complete dim=1
+#endif
 
     // ================================
     // 初期化 BEGIN

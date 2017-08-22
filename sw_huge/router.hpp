@@ -29,7 +29,7 @@ using namespace std;
 #define BITMASK_Z   7       // 0000 0000 0000 0111
 
 #define MAX_CELLS  41472    // セルの総数 =72*72*8 (16ビットで収まる)
-#define MAX_LINES  256      // ライン数の最大値 (7ビット)
+#define MAX_LINES  65535      // ライン数の最大値 (7ビット)
 #define MAX_PATH   256      // 1つのラインが対応するセル数の最大値 (8ビット)
 #define MAX_PQ     4096     // 探索時のプライオリティ・キューの最大サイズ (12ビット) 足りないかも？
 
