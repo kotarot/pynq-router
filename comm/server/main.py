@@ -101,6 +101,7 @@ def start():
     tmppath  = "{}/T03_A{}_tmp.txt".format(app_args["out"], qnumber)
     outpath  = "{}/T03_A{}.txt".format(app_args["out"], qnumber)
 
+    res = {}
     if line_num >= 0:
         if line_num < app_args["line_num_th"]:
             # LINE_NUMが閾値未満のとき，PYNQに問題を配信して問題を解かせる
@@ -113,6 +114,9 @@ def start():
             boardstr = BoardStr.conv_boardstr(_q_lines, 'random', current_seed)
             cmd = "/home/pi/pynq-router/sw_huge/sim {} {} {}".format(boardstr, current_seed, tmppath)
             subprocess.call(cmd.strip().split(" "))
+            res["answer"] = {}
+            res["answer"]["client"] = "192.168.4.1"
+            res["answer"]["answer"] = "Solved on Raspberry Pi!"
             current_seed += 1
 
     # 回答をファイルに保存するとしたらここで処理する
