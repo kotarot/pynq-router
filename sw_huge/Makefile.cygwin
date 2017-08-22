@@ -1,0 +1,14 @@
+TARGET = sim
+OBJS = $(CPPS:.cpp=.o)
+CPPS = $(wildcard *.cpp)
+CXX = g++
+CXXFLAGS = -Wall -Wno-unknown-pragmas -Wno-unused-label -DSOFTWARE
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CXX) -Wl,--stack,1073741824 -o $@ $(OBJS)
+
+clean:
+	rm *.o
+	rm $(TARGET)

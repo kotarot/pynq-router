@@ -1,0 +1,20 @@
+TARGET = sim
+OBJS = $(CPPS:.cpp=.o)
+CPPS = $(wildcard *.cpp)
+CXX = g++
+CXXFLAGS = -Wall -Wno-unknown-pragmas -Wno-unused-label -DSOFTWARE
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CXX) -o $@ $(OBJS)
+
+run:
+	python3 ../NLGenerator.py -x 20 -y 20 -z 6 -l 100;\
+	python3 ./gen_boardstr.py Q-20x20x5_100_10.txt |\
+	./$(TARGET) -
+
+
+clean:
+	rm *.o
+	rm $(TARGET)
