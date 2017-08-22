@@ -17,6 +17,9 @@ from collections import OrderedDict
 from flask import Flask, render_template, request, g
 from queue import Queue
 
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../../solver')
+import BoardStr
+
 app = Flask(__name__)
 app_args = {}
 questions = None
@@ -74,6 +77,7 @@ def start():
 
     global app_args
     global questions
+    global current_seed
 
     _question_name = request.form["qname"]
 
@@ -92,23 +96,27 @@ def start():
 
     qstr = "\n".join(_q_lines)
 
+    qnumber  = _question_name.replace(".txt", "").replace("NL_Q", "")
+    probpath = "{}/{}".format(app_args["question"], _question_name)
+    tmppath  = "{}/T03_A{}_tmp.txt".format(app_args["out"], qnumber)
+    outpath  = "{}/T03_A{}.txt".format(app_args["out"], qnumber)
+
     if line_num >= 0:
         if line_num < app_args["line_num_th"]:
             # LINE_NUMが閾値未満のとき，PYNQに問題を配信して問題を解かせる
             res = solve_questions(_question_name, qstr)
+            # 一旦回答をテンポラリファイルに保存
+            with open(tmppath, "w") as fp:
+                fp.write(res["answer"]["answer"])
         else:
             # LINE_NUMが閾値以上のとき，PYNQでは解けないのでRaspberry Piに解かせる
-            raise NotImprementedError()
+            boardstr = BoardStr.conv_boardstr(_q_lines, 'random', current_seed)
+            cmd = "/home/pi/pynq-router/sw_huge/sim {} {} {}".format(boardstr, current_seed, tmppath)
+            subprocess.call(cmd.strip().split(" "))
+            current_seed += 1
 
     # 回答をファイルに保存するとしたらここで処理する
-    # (1) 一旦回答をテンポラリファイルに保存
-    qnumber = _question_name.replace(".txt", "").replace("NL_Q", "")
-    tmppath = "{}/T03_A{}_tmp.txt".format(app_args["out"], qnumber)
-    with open(tmppath, "w") as fp:
-        fp.write(res["answer"]["answer"])
-    # (2) 再配線する
-    probpath = "{}/{}".format(app_args["question"], _question_name)
-    outpath = "{}/T03_A{}.txt".format(app_args["out"], qnumber)
+    # 再配線する
     cmd = "/home/pi/pynq-router/resolver/solver --reroute --output {} {} {}".format(outpath, probpath, tmppath)
     subprocess.call(cmd.strip().split(" "))
 
