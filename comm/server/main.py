@@ -9,6 +9,7 @@ import glob
 import json
 import os
 import requests
+import subprocess
 import sys
 import threading
 import time
@@ -108,7 +109,7 @@ def start():
     # (2) 再配線する
     probpath = "{}/{}".format(app_args["question"], _question_name)
     outpath = "{}/T03_A{}.txt".format(app_args["out"], qnumber)
-    cmd = "/home/pi/pynq-router/resolver/solver --output {} {} {}".format(outpath, probpath, tmppath)
+    cmd = "/home/pi/pynq-router/resolver/solver --reroute --output {} {} {}".format(outpath, probpath, tmppath)
     subprocess.call(cmd.strip().split(" "))
 
     # 最終結果だけを保存
