@@ -155,9 +155,12 @@ def solve_questions(qname, qstr):
 
     def worker(host, qname, qstr, qseed, q):
         _url = "http://{}/start".format(host)
-        r = requests.post(_url, data={"client": host, "qname": qname, "question": qstr, "qseed": qseed})
-        client_res = json.loads(r.text)
-        q.put(client_res)
+        try:
+            r = requests.post(_url, data={"client": host, "qname": qname, "question": qstr, "qseed": qseed})
+            client_res = json.loads(r.text)
+            q.put(client_res)
+        except Exception as e:
+            sys.stderr.write(str(e) + "\n")
 
     threads = []
     q = Queue()
@@ -198,9 +201,12 @@ def get_status():
     _client = request.form["client"]
     _url = _client + "/status"
 
-    r = requests.get(_url)
-
-    client_res = json.loads(r.text)["status"]
+    try:
+        r = requests.get(_url)
+        client_res = json.loads(r.text)["status"]
+    except Exception as e:
+        client_res = "Connection error"
+        sys.stderr.write(str(e) + "\n")
 
     res = {"status": client_res}
 
