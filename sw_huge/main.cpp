@@ -81,7 +81,8 @@ int main(int argc, char *argv[]) {
                     f << ",";
                 }
                 int i = ((x * MAX_WIDTH + y) << BITWIDTH_Z) | z;
-                f << setfill('0') << setw(2) << right << (unsigned int)(unsigned char)(boardstr[i]);
+                //f << setfill('0') << setw(2) << right << (unsigned int)(unsigned char)(boardstr[i]);
+                f << (unsigned int)(unsigned char)(boardstr[i]);
             }
             f << endl;
         }
