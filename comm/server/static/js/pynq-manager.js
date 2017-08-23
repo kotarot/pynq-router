@@ -62,7 +62,7 @@ var PynqManager = (function(){
             }
         }).done(function(res){
             var answer = res;
-            $("#solving-question-status").text('Done');
+            $("#solving-question-status").text(answer["status"]);
             $("#solved-result").text(answer["answer"]["answer"]);
             $("#solved-client").text(answer["answer"]["client"]);
 

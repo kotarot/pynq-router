@@ -117,6 +117,7 @@ def start():
             res["answer"] = {}
             res["answer"]["client"] = "192.168.4.1"
             res["answer"]["answer"] = "Solved on Raspberry Pi!"
+            res["status"] = "Solved on Raspberry Pi"
             current_seed += 1
 
     # 回答をファイルに保存するとしたらここで処理する
@@ -125,7 +126,7 @@ def start():
     subprocess.call(cmd.strip().split(" "))
 
     # 最終結果だけを保存
-    questions[_question_name]["status"] = "Done"
+    questions[_question_name]["status"] = res["status"]
     questions[_question_name]["answer"] = res["answer"]
 
     return json.dumps(res)
@@ -167,7 +168,11 @@ def solve_questions(qname, qstr):
     # res["answers"]に，回答を得られたものの結果が，返ってきた順に入る．
     # 解の品質等を決めて最終的な回答を与える場合はここで処理する（今はとりあえず最初の答え）
     # TODO: 答えが無い場合の処理
-    res["answer"] = res["answers"][0]
+    if len(res["answers"]) > 0:
+        res["answer"] = res["answers"][0]
+    else:
+        res["answer"] = { "client": "None", "answer": "" }
+        res["status"] = "DNF"
 
     print(res)
 
