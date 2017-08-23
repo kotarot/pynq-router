@@ -41,12 +41,26 @@ def before_request():
         questions = OrderedDict()
 
         for v in question_list:
+            # 問題の情報を読み込む
+            with open(v, "r") as fp:
+                _q_lines = fp.readlines()
+            board_size = ""
+            line_num = -1
+            for l in _q_lines:
+                if "SIZE" in l:
+                    board_size = l.strip().split()[1]
+                if "LINE_NUM" in l:
+                    line_num = int(l.strip().split()[1])
+                    break
+
             _name = os.path.basename(v)
             questions[_name] = {
                 "path": v,
                 "status": "Not solved",
                 "answer": {},
-                "queue": Queue()
+                "queue": Queue(),
+                "board_size": board_size,
+                "line_num": line_num
                 }
 
         # 既に回答されているものを読み込む

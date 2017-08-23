@@ -1,14 +1,18 @@
 <table class="table table-bordered" id="question-table">
     <tr>
-        <th>ファイル名</th>
-        <th>ステータス</th>
-        <th>操作</th>
+        <th class="large-cell">ファイル名</th>
+        <th class="large-cell">Size</th>
+        <th class="small-cell">Line</th>
+        <th class="large-cell">ステータス</th>
+        <th class="small-cell">操作</th>
     </tr>
     {% for k, v in questions.items() %}
     <tr>
-        <td>{{k}}</td>
-        <td>{{v.status}}</td>
-        <td>
+        <td class="large-cell">{{k}}</td>
+        <td class="large-cell">{{v.board_size}}</td>
+        <td class="small-cell">{{v.line_num}}</td>
+        <td class="large-cell">{{v.status}}</td>
+        <td class="small-cell">
             <a href="#" class="show-question-status-button" data-qname="{{k}}">選択</a>
         </td>
     </tr>
