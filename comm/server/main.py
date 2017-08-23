@@ -8,6 +8,7 @@ import argparse
 import glob
 import json
 import os
+import re
 import requests
 import subprocess
 import sys
@@ -47,6 +48,20 @@ def before_request():
                 "answer": {},
                 "queue": Queue()
                 }
+
+        # 既に回答されているものを読み込む
+        answer_path = os.path.abspath(app_args["out"])
+        answer_list = glob.glob("{}/T03_A*.txt".format(answer_path))
+
+        for v in answer_list:
+            _ans_name = os.path.basename(v)
+            m = re.search(r"T03_A([0-9]+)\.txt", _ans_name)
+            if m:
+                _name = "NL_Q{}.txt".format(m.group(1))
+                with open(v, "r") as fp:
+                    _ans_dat = fp.read()
+                questions[_name]["status"] = "Solved"
+                questions[_name]["answer"] = _ans_dat
 
     if clients is None:
 
