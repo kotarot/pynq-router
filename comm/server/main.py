@@ -154,6 +154,10 @@ def start():
     cmd = "/home/pi/pynq-router/resolver/solver --reroute --output {} {} {}".format(outpath, probpath, tmppath)
     subprocess.call(cmd.strip().split(" "))
 
+    # 回答ファイルが正しく出力されないときは，正しく解けなかったとき
+    if not os.path.exists(outpath):
+        res["status"] = "DNF"
+
     # 最終結果だけを保存
     questions[_question_name]["status"] = res["status"]
     questions[_question_name]["answer"] = res["answer"]
