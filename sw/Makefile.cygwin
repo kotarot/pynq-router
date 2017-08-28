@@ -2,7 +2,7 @@ TARGET = sim
 OBJS = $(CPPS:.cpp=.o)
 CPPS = $(wildcard *.cpp)
 CXX = g++
-CXXFLAGS = -Wall -Wno-unknown-pragmas -Wno-unused-label -DSOFTWARE
+CXXFLAGS = -Wall -Wno-unknown-pragmas -Wno-unused-label -DSOFTWARE -DCALCTIME
 
 all: $(TARGET)
 

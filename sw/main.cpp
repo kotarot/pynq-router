@@ -10,6 +10,11 @@
 #include <ap_int.h>
 #endif
 
+#ifdef CALCTIME
+#include <stdio.h>
+#include <time.h>
+#endif
+
 #include "router.hpp"
 
 
@@ -51,13 +56,17 @@ int main(int argc, char *argv[]) {
 
     // ソルバ実行
     ap_int<32> status;
+    clock_t clock_start, clock_done;
+    clock_start = clock();
     bool result = pynqrouter(boardstr, seed, &status);
+    clock_done = clock();
     if (result) {
         cout << endl << "Test Passed!" << endl;
     } else {
         cout << endl << "Test Failed!" << endl;
     }
-    cout << "status = " << (int)status << endl << endl;
+    cout << "status = " << (int)status << endl;
+    cout << "elapsed = " << ((double)(clock_done - clock_start) / CLOCKS_PER_SEC) << endl << endl;
 
     // 解表示
     cout << "SOLUTION" << endl;
