@@ -26,7 +26,7 @@ def conv_boardstr(lines, terminals='initial', _seed=12345):
             _line = re.sub(r', +', ',', line)
             _line = re.sub(r' +', ' ', _line)
             sp = _line.strip().replace('-', ' ').replace('(', '').replace(')', '').split(' ')
-            print(sp)
+            #print(sp)
 
             # s (スタート) -> g (ゴール)
             s_str = sp[1].split(',')
