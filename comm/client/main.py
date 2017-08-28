@@ -94,20 +94,6 @@ def start():
         # 実行だけ開始する
         ans["status"] = "Processing"
 
-        # # 終わるまで結果を返さないとき
-        # pynq_thread.join()
-        # if not pynq_thread is None:
-        #     res = pynq_thread.get_answer()
-        # else:
-        #     res = None
-        # pynq_thread = None
-
-        # if res is None:
-        #     ans["status"] = "DNF"
-        # else:
-        #     ans["status"] = "OK"
-        #     ans["answer"] = res
-
     else:
         ans = {"status": "Not ready", "answer": ""}
 
