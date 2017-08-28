@@ -8,6 +8,7 @@ import argparse
 import glob
 import json
 import os
+import re
 import requests
 import subprocess
 import sys
@@ -40,13 +41,41 @@ def before_request():
         questions = OrderedDict()
 
         for v in question_list:
+            # 問題の情報を読み込む
+            with open(v, "r") as fp:
+                _q_lines = fp.readlines()
+            board_size = ""
+            line_num = -1
+            for l in _q_lines:
+                if "SIZE" in l:
+                    board_size = l.strip().split()[1]
+                if "LINE_NUM" in l:
+                    line_num = int(l.strip().split()[1])
+                    break
+
             _name = os.path.basename(v)
             questions[_name] = {
                 "path": v,
                 "status": "Not solved",
                 "answer": {},
-                "queue": Queue()
+                "queue": Queue(),
+                "board_size": board_size,
+                "line_num": line_num
                 }
+
+        # 既に回答されているものを読み込む
+        answer_path = os.path.abspath(app_args["out"])
+        answer_list = glob.glob("{}/T03_A*.txt".format(answer_path))
+
+        for v in answer_list:
+            _ans_name = os.path.basename(v)
+            m = re.search(r"T03_A([0-9]+)\.txt", _ans_name)
+            if m:
+                _name = "NL_Q{}.txt".format(m.group(1))
+                with open(v, "r") as fp:
+                    _ans_dat = fp.read()
+                questions[_name]["status"] = "Solved"
+                questions[_name]["answer"] = _ans_dat
 
     if clients is None:
 
@@ -117,6 +146,7 @@ def start():
             res["answer"] = {}
             res["answer"]["client"] = "192.168.4.1"
             res["answer"]["answer"] = "Solved on Raspberry Pi!"
+            res["status"] = "Solved on Raspberry Pi"
             current_seed += 1
 
     # 回答をファイルに保存するとしたらここで処理する
@@ -124,8 +154,12 @@ def start():
     cmd = "/home/pi/pynq-router/resolver/solver --reroute --output {} {} {}".format(outpath, probpath, tmppath)
     subprocess.call(cmd.strip().split(" "))
 
+    # 回答ファイルが正しく出力されないときは，正しく解けなかったとき
+    if not os.path.exists(outpath):
+        res["status"] = "DNF"
+
     # 最終結果だけを保存
-    questions[_question_name]["status"] = "Done"
+    questions[_question_name]["status"] = res["status"]
     questions[_question_name]["answer"] = res["answer"]
 
     return json.dumps(res)
@@ -139,9 +173,12 @@ def solve_questions(qname, qstr):
 
     def worker(host, qname, qstr, qseed, q):
         _url = "http://{}/start".format(host)
-        r = requests.post(_url, data={"client": host, "qname": qname, "question": qstr, "qseed": qseed})
-        client_res = json.loads(r.text)
-        q.put(client_res)
+        try:
+            r = requests.post(_url, data={"client": host, "qname": qname, "question": qstr, "qseed": qseed})
+            client_res = json.loads(r.text)
+            q.put(client_res)
+        except Exception as e:
+            sys.stderr.write(str(e) + "\n")
 
     threads = []
     q = Queue()
@@ -167,7 +204,11 @@ def solve_questions(qname, qstr):
     # res["answers"]に，回答を得られたものの結果が，返ってきた順に入る．
     # 解の品質等を決めて最終的な回答を与える場合はここで処理する（今はとりあえず最初の答え）
     # TODO: 答えが無い場合の処理
-    res["answer"] = res["answers"][0]
+    if len(res["answers"]) > 0:
+        res["answer"] = res["answers"][0]
+    else:
+        res["answer"] = { "client": "None", "answer": "" }
+        res["status"] = "DNF"
 
     print(res)
 
@@ -178,9 +219,12 @@ def get_status():
     _client = request.form["client"]
     _url = _client + "/status"
 
-    r = requests.get(_url)
-
-    client_res = json.loads(r.text)["status"]
+    try:
+        r = requests.get(_url)
+        client_res = json.loads(r.text)["status"]
+    except Exception as e:
+        client_res = "Connection error"
+        sys.stderr.write(str(e) + "\n")
 
     res = {"status": client_res}
 
