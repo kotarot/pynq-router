@@ -6,6 +6,7 @@
 """
 
 import random
+import re
 
 def conv_boardstr(lines, terminals='initial', _seed=12345):
     """
@@ -22,14 +23,16 @@ def conv_boardstr(lines, terminals='initial', _seed=12345):
         if 'LINE_NUM' in line:
             pass
         if 'LINE#' in line:
-            sp = line.strip().replace('-', ' ').replace('(', '').replace(')', '').split(' ')
-            #print(sp)
+            _line = re.sub(r', +', ',', line)
+            _line = re.sub(r' +', ' ', _line)
+            sp = _line.strip().replace('-', ' ').replace('(', '').replace(')', '').split(' ')
+            print(sp)
 
             # s (スタート) -> g (ゴール)
             s_str = sp[1].split(',')
             g_str = sp[2].split(',')
-            s_tpl = (int(s_str[0]), int(s_str[1]), int(s_str[2]) - 1)
-            g_tpl = (int(g_str[0]), int(g_str[1]), int(g_str[2]) - 1)
+            s_tpl = (int(s_str[0].strip()), int(s_str[1].strip()), int(s_str[2].strip()) - 1)
+            g_tpl = (int(g_str[0].strip()), int(g_str[1].strip()), int(g_str[2].strip()) - 1)
 
             # 端に近い方をスタートにしたいから各端までの距離計算する
             # (探索のキューを小さくしたいから)
