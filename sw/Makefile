@@ -2,12 +2,12 @@ TARGET = sim
 OBJS = $(CPPS:.cpp=.o)
 CPPS = $(wildcard *.cpp)
 CXX = g++
-CXXFLAGS = -Wall -Wno-unknown-pragmas -Wno-unused-label -DSOFTWARE -DCALCTIME
+CXXFLAGS = -O3 -Wall -Wno-unknown-pragmas -Wno-unused-label -DSOFTWARE -DCALCTIME
 
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CXX) -o $@ $(OBJS)
+	$(CXX) -O3 -o $@ $(OBJS)
 
 run:
 	python3 ../NLGenerator.py -x 20 -y 20 -z 6 -l 100;\
