@@ -52,7 +52,8 @@ class StoppableThread(threading.Thread):
         res = {
             "client": client_baseurl,
             "qname": self._qname,
-            "answer": answer
+            "answer": answer,
+            "cputime": result['elapsed']
         }
         self._answer = answer
         r = requests.post("http://{}/post".format(args["host"]), data=res)

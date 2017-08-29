@@ -92,8 +92,9 @@ def post():
     _client = request.form["client"]
     _qname = request.form["qname"]
     _answer = request.form["answer"]
+    _cputime = request.form["cputime"]
 
-    dat = {"client": _client, "answer": _answer}
+    dat = {"client": _client, "answer": _answer, "cputime": _cputime}
 
     questions[_qname]["queue"].put(dat)
 
@@ -142,12 +143,19 @@ def start():
             # LINE_NUMが閾値以上のとき，PYNQでは解けないのでRaspberry Piに解かせる
             boardstr = BoardStr.conv_boardstr(_q_lines, 'random', current_seed)
             cmd = "/home/pi/pynq-router/sw_huge/sim {} {} {}".format(boardstr, current_seed, tmppath)
+            time_start = time.time()
             subprocess.call(cmd.strip().split(" "))
+            time_done = time.time()
+            elapsed = time_done - time_start
             res["answer"] = {}
             res["answer"]["client"] = "192.168.4.1"
             res["answer"]["answer"] = "Solved on Raspberry Pi!"
+            res["answer"]["cputime"] = elapsed
             res["status"] = "Solved on Raspberry Pi"
             current_seed += 1
+
+    # CPU time
+    print("CPU time:" + res["answer"]["cputime"])
 
     # 回答をファイルに保存するとしたらここで処理する
     # 整形ルーティング (再配線) する
@@ -220,7 +228,7 @@ def solve_questions(qname, qstr):
         res["answer"] = { "client": "None", "answer": "" }
         res["status"] = "DNF"
 
-    print(res)
+    #print(res)
 
     return res
 

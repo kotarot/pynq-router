@@ -95,7 +95,7 @@ def solve(boardstr, seed=12345, zero_padding=False):
         # 解けなかったらLEDを消す
         mmio_led.write(0, 0)
         sys.stderr.write('Cannot solve it!\n')
-        return { 'solved': False, 'solution': '' }
+        return { 'solved': False, 'solution': '', 'elapsed': -1.0 }
     print('Solved!')
 
     # 解けたらLEDを全部つける
@@ -122,7 +122,7 @@ def solve(boardstr, seed=12345, zero_padding=False):
                     solution += str(boards[i])               # 普通に表示
             solution += '\n'
 
-    return { 'solved': True, 'solution': solution }
+    return { 'solved': True, 'solution': solution, 'elapsed': elapsed }
 
 
 def main():
