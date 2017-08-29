@@ -35,3 +35,8 @@ adccli get-q
 
 問題ダウンロード
 adccli get-q 1
+
+回答済みダウンロード
+どちらのコマンドも問題番号付けないと一覧
+adccli get-a 1
+adccli get-a-info 1
