@@ -157,6 +157,10 @@ def start():
     # 回答ファイルが正しく出力されないときは，正しく解けなかったとき
     if not os.path.exists(outpath):
         res["status"] = "DNF"
+    else:
+        # Format check
+        cmd = "/usr/bin/python /home/pi/conmgr/adc2017/server/nlcheck.py --input {} --target {}".format(probpath, outpath)
+        subprocess.call(cmd.strip().split(" "))
 
     # 最終結果だけを保存
     questions[_question_name]["status"] = res["status"]
