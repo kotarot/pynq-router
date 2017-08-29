@@ -13,6 +13,7 @@ tags
 !README.txt
 !servers.txt
 !commands.txt
+!memory.txt
 
 # Object files
 *.o
