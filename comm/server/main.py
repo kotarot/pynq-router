@@ -164,6 +164,7 @@ def start():
     print("CPU_time:{}".format(res["answer"]["cputime"]))
     with open(infopath, "w") as f:
         f.write("CPU_time:{}\n".format(res["answer"]["cputime"]))
+        f.write("memory:551250\n")
 
     # 回答をファイルに保存するとしたらここで処理する
     # 整形ルーティング (再配線) する
