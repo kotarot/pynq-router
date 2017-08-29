@@ -22,6 +22,7 @@ tags
 !answers/.gitkeep
 !NL_QHUGE*.txt
 !NL_QLINE*.txt
+!NL_QADJ*.txt
 
 # Executables
 *.exe
