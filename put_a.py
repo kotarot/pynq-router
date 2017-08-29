@@ -53,7 +53,7 @@ def main():
     print('`{}`'.format(cmd))
     subprocess.call(cmd.strip().split(' '))
 
-    time.sleep(5)
+    time.sleep(2)
 
     # Submit info
     cmd = "/home/pi/conmgr/client/adccli put-a-info {} {} {} FPGAsolver".format(n, cpu_time, memory)

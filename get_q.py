@@ -11,6 +11,8 @@ def main():
         help='Get problems from Q1 to Qn')
     args = parser.parse_args()
 
+    n = args.n
+
     for i in range(1, n + 1):
         cmd = '/home/pi/conmgr/client/adccli --output /home/pi/pynq-router/problems/NL_Q%02d.txt get-q %d' % (i, i)
         print('`{}`'.format(cmd))
