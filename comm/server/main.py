@@ -69,13 +69,16 @@ def before_request():
 
         for v in answer_list:
             _ans_name = os.path.basename(v)
-            m = re.search(r"T03_A([0-9]+)\.txt", _ans_name)
+            m = re.search(r"T03_A([0-9A-Za-z]+)\.txt", _ans_name)
             if m:
                 _name = "NL_Q{}.txt".format(m.group(1))
                 with open(v, "r") as fp:
                     _ans_dat = fp.read()
-                questions[_name]["status"] = "Solved"
-                questions[_name]["answer"] = _ans_dat
+                try:
+                    questions[_name]["status"] = "Solved"
+                    questions[_name]["answer"] = _ans_dat
+                except KeyError as e:
+                    pass
 
     if clients is None:
 
