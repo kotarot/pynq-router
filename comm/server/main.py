@@ -129,6 +129,7 @@ def start():
     qnumber  = _question_name.replace(".txt", "").replace("NL_Q", "")
     probpath = "{}/{}".format(app_args["question"], _question_name)
     tmppath  = "{}/T03_A{}_tmp.txt".format(app_args["out"], qnumber)
+    infopath = "{}/T03_A{}_info.txt".format(app_args["out"], qnumber)
     outpath  = "{}/T03_A{}.txt".format(app_args["out"], qnumber)
 
     res = {}
@@ -143,6 +144,7 @@ def start():
             # LINE_NUMが閾値以上のとき，PYNQでは解けないのでRaspberry Piに解かせる
             boardstr = BoardStr.conv_boardstr(_q_lines, 'random', current_seed)
             cmd = "/home/pi/pynq-router/sw_huge/sim {} {} {}".format(boardstr, current_seed, tmppath)
+            print("`{}`".format(cmd))
             time_start = time.time()
             subprocess.call(cmd.strip().split(" "))
             time_done = time.time()
@@ -155,11 +157,14 @@ def start():
             current_seed += 1
 
     # CPU time
-    print("CPU time:" + res["answer"]["cputime"])
+    print("CPU_time:{}".format(res["answer"]["cputime"]))
+    with open(infopath, "w") as f:
+        f.write("CPU_time:{}\n".format(res["answer"]["cputime"]))
 
     # 回答をファイルに保存するとしたらここで処理する
     # 整形ルーティング (再配線) する
     cmd = "/home/pi/pynq-router/resolver/solver --reroute --output {} {} {}".format(outpath, probpath, tmppath)
+    print("`{}`".format(cmd))
     subprocess.call(cmd.strip().split(" "))
 
     # たまに整形ルーティングが失敗する
@@ -174,6 +179,7 @@ def start():
     else:
         # Format check
         cmd = "/usr/bin/python /home/pi/conmgr/adc2017/server/nlcheck.py --input {} --target {}".format(probpath, outpath)
+        print("`{}`".format(cmd))
         subprocess.call(cmd.strip().split(" "))
 
     # 最終結果だけを保存
