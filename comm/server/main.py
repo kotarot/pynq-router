@@ -145,11 +145,12 @@ def start():
                 fp.write(res["answer"]["answer"])
         else:
             # LINE_NUMが閾値以上のとき，PYNQでは解けないのでRaspberry Piに解かせる
-            boardstr = BoardStr.conv_boardstr(_q_lines, 'random', current_seed)
-            cmd = "/home/pi/pynq-router/sw_huge/sim {} {} {}".format(boardstr, current_seed, tmppath)
+            # 文字数多くなるとコマンドラインで載りきらないからパイプで渡す
+            #boardstr = BoardStr.conv_boardstr(_q_lines, 'random', current_seed)
+            cmd = "/opt/python3.6/bin/python3.6 /home/pi/pynq-router/solver/gen_boardstr.py -t random -s {} {} | /home/pi/pynq-router/sw_huge/sim - {} {}".format(current_seed, probpath, current_seed, tmppath)
             print("`{}`".format(cmd))
             time_start = time.time()
-            subprocess.call(cmd.strip().split(" "))
+            subprocess.call(cmd.strip(), shell=True)
             time_done = time.time()
             elapsed = time_done - time_start
             res["answer"] = {}
