@@ -1,0 +1,31 @@
+# コンテスト・ソルバ用コマンド
+
+## システム起動
+
+ラズパイ上で，
+
+```
+$ /opt/python3.6/bin/python3.6 comm/server/main.py -c servers.txt -q ./problems -o ./answers --debug
+$ parallel-ssh -h servers.txt -A -i "/opt/python3.6/bin/python3.6 comm/client/main.py --debug"
+```
+
+
+## adccli
+
+使用方法
+https://github.com/dasadc/conmgr/blob/master/adc2015.md
+
+ログイン
+adccli --URL='http://das-adc.appspot.com/' --username='ADC2017-3' --password='XXXXXXXX' login
+
+自分の確認
+adccli whoami
+
+生存報告
+adccli put-user-alive 'alive'
+
+問題一覧
+adccli get-q
+
+問題ダウンロード
+adccli get-q 1
