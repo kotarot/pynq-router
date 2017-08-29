@@ -75,5 +75,6 @@ sed -e "s/ap_int<1>/int/g" \
     -e "s/ap_uint<15>/unsigned int/g" \
     -e "s/ap_uint<16>/unsigned int/g" \
     -e "s/MAX_LINES  128/MAX_LINES  65535/g" \
+    -e "s/BOARDSTR_SIZE 41472/BOARDSTR_SIZE 262144/g" \
     -e "s/char boardstr/unsigned int boardstr/g" \
     ../sw/router.hpp > router.hpp

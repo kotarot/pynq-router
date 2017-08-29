@@ -39,7 +39,7 @@ using namespace std;
 #define PQ_DATA_MASK      4294901760  // 1111 1111 1111 1111 0000 0000 0000 0000
 
 #define MAX_WEIGHT 255      // 重みの最大値 (8ビットで収まる)
-#define BOARDSTR_SIZE 41472 // ボードストリングの最大文字数 (セル数 72*72*8 あれば良い)
+#define BOARDSTR_SIZE 262144 // ボードストリングの最大文字数 (セル数 72*72*8 あれば良い)
 
 
 void lfsr_random_init(ap_uint<32> seed);
