@@ -98,7 +98,7 @@ static unsigned int line_num = 0; // ラインの総数
     bool adjacents[MAX_LINES];              // スタートとゴールが隣接しているライン
 #endif
 
-bool pynqrouter(char boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *status) {
+bool pynqrouter(unsigned int boardstr[BOARDSTR_SIZE], ap_uint<32> seed, ap_int<32> *status) {
 #pragma HLS INTERFACE s_axilite port=boardstr bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=seed bundle=AXI4LS
 #pragma HLS INTERFACE s_axilite port=status bundle=AXI4LS

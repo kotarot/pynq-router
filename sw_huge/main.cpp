@@ -52,9 +52,14 @@ int main(int argc, char *argv[]) {
     int size_y = (boardstr[4] - '0') * 10 + (boardstr[5] - '0');
     int size_z = (boardstr[7] - '0');
 
+    unsigned int _boardstr[BOARDSTR_SIZE];
+    for (int i = 0; i < BOARDSTR_SIZE; i++) {
+        _boardstr[i] = (int)(boardstr[i]);
+    }
+
     // ƒ\ƒ‹ƒoŽÀs
     ap_int<32> status;
-    bool result = pynqrouter(boardstr, seed, &status);
+    bool result = pynqrouter(_boardstr, seed, &status);
     if (result) {
         cout << endl << "Test Passed!" << endl;
     } else {
@@ -81,8 +86,8 @@ int main(int argc, char *argv[]) {
                     f << ",";
                 }
                 int i = ((x * MAX_WIDTH + y) << BITWIDTH_Z) | z;
-                //f << setfill('0') << setw(2) << right << (unsigned int)(unsigned char)(boardstr[i]);
-                f << (unsigned int)(unsigned char)(boardstr[i]);
+                //f << setfill('0') << setw(2) << right << (unsigned int)(_boardstr[i]);
+                f << (unsigned int)(_boardstr[i]);
             }
             f << endl;
         }

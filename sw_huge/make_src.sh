@@ -39,6 +39,7 @@ sed -e "s/ap_int<1>/int/g" \
     -e "s/ap_uint<14>/unsigned int/g" \
     -e "s/ap_uint<15>/unsigned int/g" \
     -e "s/ap_uint<16>/unsigned int/g" \
+    -e "s/char boardstr/unsigned int boardstr/g" \
     ../sw/router.cpp > router.cpp
 
 sed -e "s/ap_int<1>/int/g" \
@@ -74,4 +75,5 @@ sed -e "s/ap_int<1>/int/g" \
     -e "s/ap_uint<15>/unsigned int/g" \
     -e "s/ap_uint<16>/unsigned int/g" \
     -e "s/MAX_LINES  128/MAX_LINES  65535/g" \
+    -e "s/char boardstr/unsigned int boardstr/g" \
     ../sw/router.hpp > router.hpp
