@@ -156,9 +156,9 @@ def start():
 
     # たまに整形ルーティングが失敗する
     # そのときは tmp を答えファイルとしてコピーする
-    if not os.path.exists(outpath) and os.path.exists(tmppath):
-        cmd = "/bin/cp {} {}".format(tmppath, outpath)
-        subprocess.call(cmd.strip().split(" "))
+    #if not os.path.exists(outpath) and os.path.exists(tmppath):
+    #    cmd = "/bin/cp {} {}".format(tmppath, outpath)
+    #    subprocess.call(cmd.strip().split(" "))
 
     # 回答ファイルが正しく出力されないときは，正しく解けなかったとき
     if not os.path.exists(outpath):
