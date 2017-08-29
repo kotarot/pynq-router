@@ -6,7 +6,7 @@
 
 ```
 $ /opt/python3.6/bin/python3.6 comm/server/main.py -c servers.txt -q ./problems -o ./answers --debug
-$ parallel-ssh -h servers.txt -A -t 0 -i "/opt/python3.6/bin/python3.6 comm/client/main.py --debug"
+$ parallel-ssh -h ../servers.txt -A -t 0 -i "/opt/python3.6/bin/python3.6 comm/client/main.py --debug"
 ```
 
 
