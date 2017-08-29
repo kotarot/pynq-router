@@ -9,6 +9,12 @@ $ /opt/python3.6/bin/python3.6 comm/server/main.py -c servers.txt -q ./problems 
 $ parallel-ssh -h ../servers.txt -A -t 0 -i "/opt/python3.6/bin/python3.6 /home/xilinx/pynq-router/comm/client/main.py --debug"
 ```
 
+困ったら再起動，
+
+```
+$ parallel-ssh -h ../servers.txt -A -i "shutdown -r now"
+```
+
 
 ## adccli
 
