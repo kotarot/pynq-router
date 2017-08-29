@@ -150,9 +150,15 @@ def start():
             current_seed += 1
 
     # 回答をファイルに保存するとしたらここで処理する
-    # 再配線する
+    # 整形ルーティング (再配線) する
     cmd = "/home/pi/pynq-router/resolver/solver --reroute --output {} {} {}".format(outpath, probpath, tmppath)
     subprocess.call(cmd.strip().split(" "))
+
+    # たまに整形ルーティングが失敗する
+    # そのときは tmp を答えファイルとしてコピーする
+    if not os.path.exists(outpath) and os.path.exists(tmppath):
+        cmd = "/bin/cp {} {}".format(tmppath, outpath)
+        subprocess.call(cmd.strip().split(" "))
 
     # 回答ファイルが正しく出力されないときは，正しく解けなかったとき
     if not os.path.exists(outpath):
