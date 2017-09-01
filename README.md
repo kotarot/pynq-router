@@ -104,7 +104,7 @@ cd /home/xilinx/solver
 1. 情報処理学会 DAシンポジウム2017 アルゴリズムデザインコンテスト 最優秀賞
 
 
-## Our other works
+## Our Previous Work
 
 * [nl-solver](https://github.com/kotarot/nl-solver)
 
